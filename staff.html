@@ -6,6 +6,7 @@
   <meta name="description" content="DPRO訪問介護 スタッフ用訪問記録画面">
   <meta name="theme-color" content="#0b6b62">
   <title>スタッフ訪問記録｜DPRO訪問介護</title>
+  <!-- HOMECARE-5-R3: 詳細ダイアログ内のform入れ子を解消 -->
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="staff.css">
 </head>
@@ -99,7 +100,7 @@
   </main>
 
   <dialog class="visit-dialog" id="visitDialog">
-    <form method="dialog" class="dialog-frame" id="visitDialogFrame">
+    <div class="dialog-frame" id="visitDialogFrame">
       <header class="dialog-header">
         <div>
           <p class="eyebrow staff-eyebrow" id="detailStatus">訪問詳細</p>
@@ -194,7 +195,7 @@
           </div>
         </section>
       </div>
-    </form>
+    </div>
   </dialog>
 
   <dialog class="small-dialog" id="handoverDialog">
