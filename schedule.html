@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="DPRO訪問介護・家族連絡 LINE 訪問予定・スタッフ割当て管理">
+  <title>訪問予定・スタッフ割当て｜DPRO訪問介護</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="schedule.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">DP</div>
+        <div class="brand-copy">
+          <p class="brand-title">訪問予定・スタッフ割当て</p>
+          <p class="brand-subtitle">DPRO訪問介護ステーション</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="button button-secondary compact" id="reloadButton" type="button">更新</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="schedule-shell">
+    <section class="demo-banner" id="demoBanner" hidden>
+      <strong>デモ表示中</strong>
+      <span>架空の利用者・スタッフ情報を使った操作確認用画面です。</span>
+    </section>
+
+    <section class="admin-gate card" id="adminGate">
+      <div>
+        <p class="eyebrow schedule-eyebrow">ADMIN ACCESS</p>
+        <h1>訪問予定を安全に管理</h1>
+        <p>管理コードを確認後、訪問予定、定期予定、担当スタッフを表示します。</p>
+      </div>
+      <form id="adminForm" class="admin-code-form">
+        <label for="adminCode">管理コード</label>
+        <div class="code-entry">
+          <input id="adminCode" name="admin_code" type="password" inputmode="numeric" autocomplete="off" maxlength="32" placeholder="管理コードを入力" required>
+          <button class="button button-secondary" id="clearAdminCode" type="button">削除</button>
+          <button class="button button-primary" type="submit">開く</button>
+        </div>
+        <p class="form-help">デモ環境の管理コードは1234です。本番では安全な認証へ切り替えます。</p>
+      </form>
+    </section>
+
+    <section id="workspace" hidden>
+      <div class="page-heading schedule-heading">
+        <div>
+          <p class="eyebrow schedule-eyebrow">SCHEDULE CONTROL</p>
+          <h1>訪問予定・定期予定</h1>
+          <p>利用者とスタッフの重複を防ぎ、2名介助も同一訪問で管理します。</p>
+        </div>
+        <div class="heading-actions">
+          <button class="button button-primary" type="button" data-open-panel="visitCreatePanel">単発訪問を追加</button>
+          <button class="button button-secondary" type="button" data-open-panel="recurringCreatePanel">定期予定を追加</button>
+        </div>
+      </div>
+
+      <section class="summary-grid" aria-label="予定集計">
+        <article class="summary-card"><span>期間内の訪問</span><strong id="countVisits">0</strong><small>キャンセル含む</small></article>
+        <article class="summary-card"><span>未割当て</span><strong id="countUnassigned">0</strong><small>必要人数に未達</small></article>
+        <article class="summary-card"><span>2名以上の介助</span><strong id="countMultiStaff">0</strong><small>同一訪問で管理</small></article>
+        <article class="summary-card"><span>有効な定期予定</span><strong id="countRecurring">0</strong><small>曜日別の基本予定</small></article>
+      </section>
+
+      <section class="card filter-card">
+        <div class="section-title-row">
+          <div>
+            <h2>表示期間</h2>
+            <p>最大32日まで表示できます。</p>
+          </div>
+          <button class="button button-primary compact" id="applyRangeButton" type="button">この期間を表示</button>
+        </div>
+        <div class="filter-grid">
+          <label>開始日<input id="dateFrom" type="date"></label>
+          <label>終了日<input id="dateTo" type="date"></label>
+          <label>状態
+            <select id="statusFilter">
+              <option value="">すべて</option>
+              <option value="scheduled">予定</option>
+              <option value="confirmed">確認済み</option>
+              <option value="in_progress">訪問中</option>
+              <option value="completed">完了</option>
+              <option value="cancelled">キャンセル</option>
+            </select>
+          </label>
+          <label>スタッフ
+            <select id="staffFilter"><option value="">すべて</option></select>
+          </label>
+        </div>
+      </section>
+
+      <div class="schedule-layout">
+        <section class="card visits-section">
+          <div class="section-title-row">
+            <div>
+              <h2>訪問予定一覧</h2>
+              <p id="rangeLabel">読み込み中</p>
+            </div>
+            <span class="status-pill neutral" id="visibleCount">0件</span>
+          </div>
+          <div id="visitsList" class="visits-list" aria-live="polite"></div>
+        </section>
+
+        <aside class="schedule-side">
+          <section class="card generation-card">
+            <h2>定期予定から一括生成</h2>
+            <p>同じ定期予定・同じ日付は再生成しても増えません。担当重複時は未割当てで残します。</p>
+            <form id="generateForm" class="stack-form">
+              <label>生成開始日<input id="generateFrom" name="date_from" type="date" required></label>
+              <label>生成終了日<input id="generateTo" name="date_to" type="date" required></label>
+              <button class="button button-primary" type="submit">訪問予定を生成</button>
+            </form>
+            <div id="generateResult" class="inline-result" hidden></div>
+          </section>
+
+          <section class="card recurring-section">
+            <div class="section-title-row">
+              <div><h2>定期予定</h2><p>曜日・時刻・希望担当を管理します。</p></div>
+            </div>
+            <div id="recurringList" class="recurring-list" aria-live="polite"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div class="panel-backdrop" id="panelBackdrop" hidden></div>
+
+  <aside class="edit-panel" id="visitCreatePanel" aria-labelledby="visitCreateTitle" hidden>
+    <div class="panel-header"><h2 id="visitCreateTitle">単発訪問を追加</h2><button class="icon-button" type="button" data-close-panel aria-label="閉じる">×</button></div>
+    <form id="visitCreateForm" class="panel-form">
+      <label>利用者<select name="client_id" data-client-select required></select></label>
+      <label>訪問介護計画<select name="service_plan_id" data-plan-select><option value="">指定なし</option></select></label>
+      <div class="two-columns">
+        <label>訪問日<input name="date" type="date" required></label>
+        <label>開始時刻<select name="start_time" data-time-select required></select></label>
+      </div>
+      <div class="two-columns">
+        <label>サービス時間<select name="duration_minutes" data-duration-select required></select></label>
+        <label>サービス区分<select name="service_type" data-service-select required></select></label>
+      </div>
+      <label>必要スタッフ数<select name="required_staff_count" data-required-count required></select></label>
+      <fieldset><legend>担当スタッフ</legend><div class="staff-checks" data-staff-checks></div><p class="form-help">2名介助は必要人数を2以上にして、同じ訪問へ複数スタッフを割り当てます。</p></fieldset>
+      <label>登録理由・補足<textarea name="reason" rows="3" maxlength="500" placeholder="例：家族から臨時訪問の依頼"></textarea></label>
+      <div class="panel-actions"><button class="button button-secondary" type="button" data-close-panel>閉じる</button><button class="button button-primary" type="submit">登録する</button></div>
+    </form>
+  </aside>
+
+  <aside class="edit-panel" id="visitEditPanel" aria-labelledby="visitEditTitle" hidden>
+    <div class="panel-header"><h2 id="visitEditTitle">訪問予定を変更</h2><button class="icon-button" type="button" data-close-panel aria-label="閉じる">×</button></div>
+    <form id="visitEditForm" class="panel-form">
+      <input name="visit_id" type="hidden">
+      <div class="selected-client" id="editClientName"></div>
+      <div class="two-columns">
+        <label>訪問日<input name="date" type="date" required></label>
+        <label>開始時刻<select name="start_time" data-time-select required></select></label>
+      </div>
+      <div class="two-columns">
+        <label>サービス時間<select name="duration_minutes" data-duration-select required></select></label>
+        <label>サービス区分<select name="service_type" data-service-select required></select></label>
+      </div>
+      <label>必要スタッフ数<select name="required_staff_count" data-required-count required></select></label>
+      <fieldset><legend>担当スタッフ</legend><div class="staff-checks" data-staff-checks></div></fieldset>
+      <label>変更理由<textarea name="reason" rows="3" maxlength="500" placeholder="例：家族希望により開始時刻を変更" required></textarea></label>
+      <div class="panel-actions"><button class="button button-secondary" type="button" data-close-panel>閉じる</button><button class="button button-primary" type="submit">変更を保存</button></div>
+    </form>
+  </aside>
+
+  <aside class="edit-panel" id="recurringCreatePanel" aria-labelledby="recurringTitle" hidden>
+    <div class="panel-header"><h2 id="recurringTitle">定期予定を追加</h2><button class="icon-button" type="button" data-close-panel aria-label="閉じる">×</button></div>
+    <form id="recurringForm" class="panel-form">
+      <input name="schedule_id" type="hidden">
+      <input name="is_active" type="hidden" value="true">
+      <label>利用者<select name="client_id" data-client-select required></select></label>
+      <label>訪問介護計画<select name="service_plan_id" data-plan-select><option value="">指定なし</option></select></label>
+      <div class="two-columns">
+        <label>曜日<select name="weekday" data-weekday-select required></select></label>
+        <label>開始時刻<select name="start_time" data-time-select required></select></label>
+      </div>
+      <div class="two-columns">
+        <label>サービス時間<select name="duration_minutes" data-duration-select required></select></label>
+        <label>サービス区分<select name="service_type" data-service-select required></select></label>
+      </div>
+      <label>必要スタッフ数<select name="required_staff_count" data-required-count required></select></label>
+      <label>希望担当スタッフ<select name="preferred_staff_id" data-staff-select><option value="">未指定</option></select></label>
+      <div class="two-columns">
+        <label>適用開始日<input name="effective_from" type="date" required></label>
+        <label>適用終了日<input name="effective_to" type="date"></label>
+      </div>
+      <p class="form-help">必要人数が2名以上の場合、希望担当1名を自動割当てし、残りは未割当てとして調整します。</p>
+      <div class="panel-actions"><button class="button button-secondary" type="button" data-close-panel>閉じる</button><button class="button button-primary" type="submit">保存する</button></div>
+    </form>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <div class="loading-overlay" id="loadingOverlay" hidden><div class="loading-card">処理中です…</div></div>
+
+  <script src="config.js"></script>
+  <script src="schedule.js"></script>
+</body>
+</html>
