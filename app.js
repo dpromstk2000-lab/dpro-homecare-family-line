@@ -1,5 +1,5 @@
 // DPRO 訪問介護・家族連絡 LINE
-// STEP HOMECARE-3: LINE利用者・家族画面 共通処理
+// STEP HOMECARE-3-R1: ご本人デモ判定・表示分離修正
 (() => {
   'use strict';
 
@@ -148,11 +148,20 @@
 
   async function initializeIdentity() {
     if (qs.get('demo') === '1') {
+      // 専用画面を直接開いた場合でも、画面種別とデモ利用区分を必ず一致させる。
+      // member.html?demo=1 で家族情報が表示される誤判定を防止する。
+      const demoRole = PAGE === 'member'
+        ? 'client'
+        : PAGE === 'family'
+          ? 'family'
+          : (qs.get('demo_role') === 'client' ? 'client' : 'family');
       state.identity = {
-        lineUserId: CONFIG.DEMO_LINE_USER_ID || 'UDEMO_HOMECARE_FAMILY_001',
-        displayName: 'デモご家族',
+        lineUserId: demoRole === 'client'
+          ? (CONFIG.DEMO_CLIENT_LINE_USER_ID || 'UDEMO_HOMECARE_CLIENT_001')
+          : (CONFIG.DEMO_LINE_USER_ID || 'UDEMO_HOMECARE_FAMILY_001'),
+        displayName: demoRole === 'client' ? 'デモご本人' : 'デモご家族',
         isDemo: true,
-        demoRole: qs.get('demo_role') === 'client' ? 'client' : 'family',
+        demoRole,
         source: 'demo'
       };
       return state.identity;
@@ -403,10 +412,18 @@
   }
 
   function renderHome(home, memberMode = false) {
-    $('#viewerName').textContent = `${home.user.family_name} 様`;
-    $('#viewerRelationship').textContent = home.user.relationship || (memberMode ? 'ご本人' : 'ご家族');
-    $('#clientName').textContent = `${home.client.client_name} 様`;
-    $('#clientNumber').textContent = `利用者番号 ${home.client.client_number}`;
+    if (memberMode) {
+      // ご本人画面では家族名や続柄を表示せず、本人情報として明確に表示する。
+      $('#viewerName').textContent = `${home.client.client_name} 様`;
+      $('#viewerRelationship').textContent = 'ご本人';
+      $('#clientName').textContent = 'ご利用情報';
+      $('#clientNumber').textContent = `利用者番号 ${home.client.client_number}`;
+    } else {
+      $('#viewerName').textContent = `${home.user.family_name} 様`;
+      $('#viewerRelationship').textContent = home.user.relationship || 'ご家族';
+      $('#clientName').textContent = `${home.client.client_name} 様`;
+      $('#clientNumber').textContent = `利用者番号 ${home.client.client_number}`;
+    }
     $('#upcomingCount').textContent = String(home.summary.upcoming_visits);
     $('#reportCount').textContent = String(home.summary.recent_reports);
     $('#messageCount').textContent = String(home.summary.open_messages);
