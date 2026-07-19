@@ -25,13 +25,27 @@
   }[ch]));
 
   function ymd(date = new Date()) {
-    return new Intl.DateTimeFormat('sv-SE', {
+    // localeの表示順に依存せず、必ずHTML date入力/API用のYYYY-MM-DDを生成する。
+    const parts = new Intl.DateTimeFormat('ja-JP', {
       timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit'
-    }).format(date);
+    }).formatToParts(date);
+    const map = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+    return `${map.year}-${map.month}-${map.day}`;
+  }
+
+  function normalizeYmd(value, fallback = ymd()) {
+    const text = String(value || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return fallback;
+    const [year, month, day] = text.split('-').map(Number);
+    const check = new Date(Date.UTC(year, month - 1, day));
+    if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return fallback;
+    return text;
   }
 
   function addDays(dateString, days) {
-    const date = new Date(`${dateString}T12:00:00+09:00`);
+    const base = normalizeYmd(dateString);
+    const [year, month, day] = base.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day, 3, 0, 0));
     date.setUTCDate(date.getUTCDate() + Number(days));
     return ymd(date);
   }
@@ -187,6 +201,8 @@
       });
       saveSession(data);
       showWorkspace();
+      // 訪問一覧APIが一時的に失敗しても、ログイン済みスタッフ名は正しく表示する。
+      renderHeader(data);
       await loadToday();
       showToast(demoLogin ? 'デモスタッフとしてログインしました。' : 'ログインしました。');
     } finally {
@@ -258,16 +274,41 @@
     });
   }
 
+  function resetVisitEmptyMessage() {
+    const empty = $('#visitEmpty');
+    const strong = $('strong', empty);
+    const span = $('span', empty);
+    if (strong) strong.textContent = 'この日の担当訪問はありません。';
+    if (span) span.textContent = '日付を変更するか、事業所へ確認してください。';
+  }
+
+  function renderVisitLoadError(message) {
+    renderSummary({ visits: 0, scheduled: 0, in_progress: 0, completed: 0 });
+    renderVisits([]);
+    const empty = $('#visitEmpty');
+    const strong = $('strong', empty);
+    const span = $('span', empty);
+    if (strong) strong.textContent = '訪問情報を取得できませんでした。';
+    if (span) span.textContent = message || '更新ボタンを押して、もう一度お試しください。';
+    empty.hidden = false;
+  }
+
   async function loadToday() {
-    const date = $('#workDate').value || ymd();
+    const date = normalizeYmd($('#workDate').value);
+    $('#workDate').value = date;
     setLoading(true);
     try {
       const data = await api(`/staff/today?date=${encodeURIComponent(date)}`);
       state.today = data;
       renderHeader(data);
       renderSummary(data.summary);
+      resetVisitEmptyMessage();
       renderVisits(data.visits || []);
       $('#visitListTitle').textContent = date === ymd() ? '本日の訪問' : `${formatDate(date)}の訪問`;
+    } catch (error) {
+      renderHeader(state.session || {});
+      renderVisitLoadError(error.message);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -557,7 +598,7 @@
 
   async function init() {
     bindEvents();
-    $('#workDate').value = ymd();
+    $('#workDate').value = normalizeYmd(ymd());
     $('#demoBanner').hidden = !demo;
     if (demo) {
       $('#staffCode').value = 'ST003';
@@ -566,8 +607,16 @@
 
     if (restoreSession()) {
       showWorkspace();
-      try { await loadToday(); return; }
-      catch { clearSession(); }
+      renderHeader(state.session || {});
+      try {
+        await loadToday();
+        return;
+      } catch (error) {
+        // 401時はapi()側でログイン画面へ戻る。通信・日付エラーでは有効なセッションを消さない。
+        if (!state.sessionToken) return;
+        showToast(error.message, true);
+        return;
+      }
     }
 
     showLogin();
