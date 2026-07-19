@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="DPRO訪問介護 スタッフ用訪問記録画面">
+  <meta name="theme-color" content="#0b6b62">
+  <title>スタッフ訪問記録｜DPRO訪問介護</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="staff.css">
+</head>
+<body>
+  <header class="app-header staff-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">DP</div>
+        <div class="brand-copy">
+          <p class="brand-title">スタッフ訪問記録</p>
+          <p class="brand-subtitle">DPRO訪問介護ステーション</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="button button-secondary compact" id="reloadButton" type="button">更新</button>
+        <button class="button button-secondary compact" id="logoutButton" type="button" hidden>ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="staff-shell">
+    <section class="demo-banner" id="demoBanner" hidden>
+      <strong>デモ操作中</strong>
+      <span>架空の利用者情報と操作体験用訪問を使用しています。</span>
+    </section>
+
+    <section class="staff-login card" id="loginPanel">
+      <div class="login-copy">
+        <p class="eyebrow staff-eyebrow">STAFF ACCESS</p>
+        <h1>今日の訪問を安全に確認</h1>
+        <p>事業所から付与されたスタッフIDとスタッフ用コードでログインします。</p>
+      </div>
+      <form id="loginForm" class="login-form">
+        <label for="staffCode">スタッフID</label>
+        <input id="staffCode" name="staff_code" type="text" autocomplete="username" maxlength="30" placeholder="例：ST003" required>
+        <label for="accessCode">スタッフ用コード</label>
+        <div class="code-entry">
+          <input id="accessCode" name="access_code" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" placeholder="4〜12桁" required>
+          <button class="button button-secondary" id="clearAccessCode" type="button">削除</button>
+        </div>
+        <button class="button button-primary full-width" type="submit">ログイン</button>
+        <p class="form-help">共有端末では、業務終了後に必ずログアウトしてください。</p>
+      </form>
+    </section>
+
+    <section id="workspace" hidden>
+      <section class="staff-welcome card">
+        <div>
+          <p class="eyebrow staff-eyebrow">TODAY'S VISITS</p>
+          <h1 id="staffName">スタッフ名</h1>
+          <p id="staffRole">担当訪問と申し送りを確認してください。</p>
+        </div>
+        <div class="office-contact">
+          <span>事業所への連絡</span>
+          <a class="button button-secondary" id="officePhone" href="tel:0925550101">電話する</a>
+        </div>
+      </section>
+
+      <section class="date-control card">
+        <button class="date-nav" id="previousDate" type="button" aria-label="前日">‹</button>
+        <label for="workDate">
+          <span>表示日</span>
+          <input id="workDate" type="date">
+        </label>
+        <button class="date-nav" id="nextDate" type="button" aria-label="翌日">›</button>
+        <button class="button button-secondary compact" id="todayButton" type="button">今日</button>
+      </section>
+
+      <section class="staff-summary" aria-label="訪問集計">
+        <article><span>訪問</span><strong id="summaryVisits">0</strong></article>
+        <article><span>予定</span><strong id="summaryScheduled">0</strong></article>
+        <article><span>訪問中</span><strong id="summaryProgress">0</strong></article>
+        <article><span>完了</span><strong id="summaryCompleted">0</strong></article>
+      </section>
+
+      <section class="visit-list-section card">
+        <div class="section-title-row">
+          <div>
+            <h2 id="visitListTitle">本日の訪問</h2>
+            <p>訪問前に注意事項と申し送りを確認してください。</p>
+          </div>
+          <span class="count-badge" id="visitCountBadge">0件</span>
+        </div>
+        <div class="visit-list" id="visitList"></div>
+        <div class="empty-state" id="visitEmpty" hidden>
+          <strong>この日の担当訪問はありません。</strong>
+          <span>日付を変更するか、事業所へ確認してください。</span>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog class="visit-dialog" id="visitDialog">
+    <form method="dialog" class="dialog-frame" id="visitDialogFrame">
+      <header class="dialog-header">
+        <div>
+          <p class="eyebrow staff-eyebrow" id="detailStatus">訪問詳細</p>
+          <h2 id="detailClientName">利用者名</h2>
+          <p id="detailTime">予定時刻</p>
+        </div>
+        <button class="dialog-close" type="button" id="closeVisitDialog" aria-label="閉じる">×</button>
+      </header>
+
+      <div class="dialog-scroll">
+        <section class="detail-card detail-address">
+          <h3>訪問先</h3>
+          <p id="detailAddress"></p>
+          <a class="text-link" id="mapLink" href="#" target="_blank" rel="noopener">地図を開く</a>
+        </section>
+
+        <section class="alert-stack" id="clientAlerts"></section>
+
+        <section class="detail-card">
+          <div class="section-title-row compact-row">
+            <h3>申し送り</h3>
+            <button class="button button-secondary compact" id="openHandoverButton" type="button">追加</button>
+          </div>
+          <div id="handoverList" class="handover-list"></div>
+        </section>
+
+        <section class="detail-card">
+          <h3>担当スタッフ</h3>
+          <div id="assignedStaffList" class="chip-list"></div>
+        </section>
+
+        <section class="start-area" id="startArea">
+          <p>利用者宅へ到着し、サービスを開始するときに押してください。</p>
+          <button class="button button-primary action-large" id="startVisitButton" type="button">訪問を開始</button>
+        </section>
+
+        <form id="recordForm" class="record-form" hidden>
+          <section class="detail-card">
+            <div class="section-title-row compact-row">
+              <div>
+                <h3>実施項目</h3>
+                <p>必須項目はすべて結果を選択してください。</p>
+              </div>
+              <span class="required-badge">必須</span>
+            </div>
+            <div id="planItemList" class="plan-item-list"></div>
+          </section>
+
+          <section class="detail-card form-stack">
+            <label>利用者の様子 <span class="required-text">必須</span>
+              <textarea id="clientCondition" rows="3" maxlength="3000" placeholder="表情、会話、体調など事実を記録" required></textarea>
+            </label>
+            <label>実施内容 <span class="required-text">必須</span>
+              <textarea id="serviceSummary" rows="4" maxlength="5000" placeholder="実施した介助・支援内容を記録" required></textarea>
+            </label>
+            <label>ご家族へ公開するコメント
+              <textarea id="familyPublicComment" rows="3" maxlength="3000" placeholder="公開前にサービス提供責任者が確認します"></textarea>
+              <small>入力しても直ちに家族へ公開されず、承認待ちになります。</small>
+            </label>
+            <label>職員向け申し送り
+              <textarea id="internalHandover" rows="3" maxlength="5000" placeholder="家族画面には表示されません"></textarea>
+            </label>
+            <label>申し送り重要度
+              <select id="handoverImportance">
+                <option value="normal">通常</option>
+                <option value="high">重要</option>
+                <option value="urgent">緊急確認</option>
+              </select>
+            </label>
+            <label>次回の注意事項
+              <textarea id="nextVisitAttention" rows="3" maxlength="3000" placeholder="次回担当者が確認すべき内容"></textarea>
+            </label>
+          </section>
+
+          <section class="record-actions">
+            <button class="button button-secondary action-large" id="saveDraftButton" type="button">下書き保存</button>
+            <button class="button button-primary action-large" id="finishVisitButton" type="submit">訪問終了・記録提出</button>
+          </section>
+        </form>
+
+        <section class="completed-card" id="completedArea" hidden>
+          <strong>訪問・記録提出済み</strong>
+          <p id="completedText"></p>
+        </section>
+
+        <section class="emergency-area">
+          <h3>緊急・事故時</h3>
+          <p>生命に関わる場合は、システム入力より119番と事業所への電話を優先してください。</p>
+          <div class="emergency-actions">
+            <a class="button emergency-call" href="tel:119">119番へ電話</a>
+            <button class="button emergency-report" id="openIncidentButton" type="button">事故・ヒヤリハットを報告</button>
+          </div>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="small-dialog" id="handoverDialog">
+    <form class="small-dialog-frame" id="handoverForm">
+      <header><h2>申し送りを追加</h2><button type="button" class="dialog-close" data-close="handoverDialog">×</button></header>
+      <label>件名<input id="handoverTitle" maxlength="200" required placeholder="例：移乗時の注意"></label>
+      <label>内容<textarea id="handoverText" rows="5" maxlength="5000" required></textarea></label>
+      <label>重要度<select id="quickHandoverImportance"><option value="normal">通常</option><option value="high">重要</option><option value="urgent">緊急確認</option></select></label>
+      <div class="dialog-buttons"><button class="button button-secondary" type="button" data-close="handoverDialog">閉じる</button><button class="button button-primary" type="submit">登録</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="small-dialog incident-dialog" id="incidentDialog">
+    <form class="small-dialog-frame" id="incidentForm">
+      <header><h2>事故・ヒヤリハット報告</h2><button type="button" class="dialog-close" data-close="incidentDialog">×</button></header>
+      <div class="warning-box"><strong>緊急時は電話を優先</strong><span>生命に関わる場合は119番と事業所へ連絡してください。</span></div>
+      <label>種類<select id="incidentType"><option value="near_miss">ヒヤリハット</option><option value="fall">転倒</option><option value="injury">外傷</option><option value="medication_concern">服薬に関する懸念</option><option value="missing_item">物品紛失</option><option value="property_damage">物損</option><option value="complaint">苦情</option><option value="other">その他</option></select></label>
+      <label>重大度<select id="incidentSeverity"><option value="low">低</option><option value="medium">中</option><option value="high">高</option><option value="critical">重大・緊急</option></select></label>
+      <label>発生した事実<textarea id="incidentFact" rows="5" maxlength="5000" required placeholder="推測ではなく、確認した事実を入力"></textarea></label>
+      <label>初期対応<textarea id="incidentResponse" rows="4" maxlength="5000" placeholder="連絡、応急対応、見守りなど"></textarea></label>
+      <div class="dialog-buttons"><button class="button button-secondary" type="button" data-close="incidentDialog">閉じる</button><button class="button emergency-report" type="submit">報告する</button></div>
+    </form>
+  </dialog>
+
+  <div class="loading-overlay" id="loadingOverlay" hidden><div class="spinner"></div><span>処理しています</span></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="config.js"></script>
+  <script src="staff.js"></script>
+</body>
+</html>
