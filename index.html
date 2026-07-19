@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d665f">
+  <meta name="description" content="DPRO 訪問介護・家族連絡 LINE。訪問予定、ご家族への報告、事業所への連絡をLINEで確認できます。">
+  <title>DPRO 訪問介護・家族連絡 LINE</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body data-page="index">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">DP</div>
+        <div class="brand-copy">
+          <p class="brand-title">訪問介護・家族連絡</p>
+          <p class="brand-subtitle js-office-name">DPRO訪問介護ステーション</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-grid">
+        <div class="hero-panel">
+          <p class="eyebrow">Homecare & Family</p>
+          <h1 id="pageTitle">訪問予定と<br>ご家族への報告をLINEで</h1>
+          <p class="hero-lead">次回の訪問予定、事業所から公開された訪問報告、お問い合わせを、分かりやすい画面で確認できます。</p>
+        </div>
+        <aside class="card hero-note">
+          <h2 class="card-title">安心してご利用いただくために</h2>
+          <p class="card-description">電話番号が一致しただけでは介護情報を表示しません。LINE連携は事業所が登録内容を確認してから承認します。</p>
+          <div class="alert alert-info" style="margin-top:16px">
+            <strong class="alert-title">緊急時について</strong>
+            急を要する場合はLINEではなく、事業所または119番へ電話してください。
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <div id="fatalError" class="alert alert-danger" hidden></div>
+    <div id="linkStatus" class="alert alert-info" hidden></div>
+
+    <section id="linkedCard" class="card" hidden aria-labelledby="linkedTitle">
+      <div class="card-header">
+        <div>
+          <h2 id="linkedTitle" class="card-title">LINE連携済みです</h2>
+          <p id="linkedName" class="card-description"></p>
+        </div>
+        <span class="status-pill status-completed">承認済み</span>
+      </div>
+      <p id="linkedClient"></p>
+      <div class="button-row">
+        <a id="openPortal" class="button button-primary" href="family.html">専用画面を開く</a>
+      </div>
+    </section>
+
+    <section id="pendingCard" class="card" hidden aria-labelledby="pendingTitle">
+      <div class="card-header">
+        <div>
+          <h2 id="pendingTitle" class="card-title">連携申請を確認中です</h2>
+          <p id="pendingMessage" class="card-description">事業所が登録情報を確認しています。承認後にこの画面から利用できます。</p>
+        </div>
+        <span class="status-pill status-in_progress">確認中</span>
+      </div>
+      <div class="alert alert-warning">
+        承認にはお時間をいただく場合があります。お急ぎの場合は、<a class="js-office-phone" href="#">事業所</a>へお問い合わせください。
+      </div>
+    </section>
+
+    <section id="previewCard" class="card" hidden aria-labelledby="previewTitle">
+      <h2 id="previewTitle" class="card-title">現在はブラウザ確認モードです</h2>
+      <p class="card-description">LINE連携申請は、LIFF設定後にLINE公式アカウントから開いた場合だけ送信できます。デモ画面は下のボタンから確認できます。</p>
+      <div class="button-row">
+        <a class="button button-secondary" href="family.html?demo=1">家族向けデモを開く</a>
+        <a class="button button-ghost" href="member.html?demo=1&amp;demo_role=client">本人向けデモを開く</a>
+      </div>
+    </section>
+
+    <section id="linkFormCard" class="card" hidden aria-labelledby="formTitle">
+      <div class="card-header">
+        <div>
+          <h2 id="formTitle" class="card-title">初回LINE連携申請</h2>
+          <p class="card-description">事業所へ登録している内容を入力してください。承認前に介護情報が表示されることはありません。</p>
+        </div>
+      </div>
+
+      <div class="segmented" aria-label="利用区分">
+        <button type="button" class="segment" data-role="family" aria-pressed="true">ご家族として利用</button>
+        <button type="button" class="segment" data-role="client" aria-pressed="false">ご本人として利用</button>
+      </div>
+
+      <form id="linkRequestForm" novalidate>
+        <input id="requestedRole" type="hidden" name="requested_role" value="family">
+        <div class="form-grid">
+          <div class="field">
+            <label for="applicantName">申請する方のお名前<span class="required">必須</span></label>
+            <input id="applicantName" name="applicant_name" type="text" autocomplete="name" maxlength="80" required placeholder="例：福田 太郎">
+          </div>
+          <div class="field">
+            <label for="applicantPhone">事業所へ登録している電話番号<span class="required">必須</span></label>
+            <input id="applicantPhone" name="applicant_phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="30" required placeholder="例：090-1234-5678">
+            <p class="help">ハイフン、空白、全角、+81形式でも入力できます。</p>
+          </div>
+          <div class="field">
+            <label for="clientNumber">利用者番号</label>
+            <input id="clientNumber" name="client_number" type="text" maxlength="40" placeholder="例：HC0001">
+            <p class="help">事業所から案内されている場合だけ入力してください。</p>
+          </div>
+          <div class="field">
+            <label for="clientName">介護サービスを利用している方のお名前</label>
+            <input id="clientName" name="client_name" type="text" maxlength="80" placeholder="例：福田 花子">
+          </div>
+        </div>
+        <div id="formError" class="alert alert-danger" hidden style="margin-top:18px"></div>
+        <div class="button-row">
+          <button id="submitLinkRequest" type="submit" class="button button-primary">LINE連携を申請する</button>
+        </div>
+        <p class="help">申請後、事業所が利用者情報と続柄などを確認します。不一致の場合は事業所から連絡することがあります。</p>
+      </form>
+    </section>
+
+    <footer class="footer">
+      <p><span class="js-office-name">DPRO訪問介護ステーション</span></p>
+      <p>内部申し送り、職員向け注意事項、事故調査中の情報は家族画面へ公開されません。</p>
+    </footer>
+  </main>
+
+  <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
+    <div class="loader-card"><div class="spinner" aria-hidden="true"></div><strong data-loading-message>読み込み中です</strong></div>
+  </div>
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+</body>
+</html>

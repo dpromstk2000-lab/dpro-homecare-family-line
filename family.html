@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d665f">
+  <meta name="description" content="DPRO 訪問介護・家族連絡 LINE 専用ポータル">
+  <title>ご家族専用画面｜DPRO 訪問介護・家族連絡 LINE</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body data-page="family">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">DP</div>
+        <div class="brand-copy">
+          <p class="brand-title">ご家族専用画面</p>
+          <p class="brand-subtitle js-office-name">DPRO訪問介護ステーション</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="refreshButton" type="button" class="button button-ghost button-small">更新</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <div id="demoBanner" class="alert alert-warning" hidden style="margin-top:20px">
+      <strong class="alert-title">デモ表示中</strong>
+      この画面は架空の利用者情報を使った操作確認用です。
+    </div>
+    <div id="fatalError" class="alert alert-danger" hidden style="margin-top:20px"></div>
+
+    <section class="page-heading">
+      <p class="eyebrow" style="color:var(--primary)">Family Portal</p>
+      <h1>ご家族の安心を、ひとつの画面で</h1>
+      <p>訪問予定、公開されたご報告、事業所への連絡を確認できます。</p>
+    </section>
+
+    <section class="profile-strip" aria-label="連携情報">
+      <div>
+        <p id="viewerName" class="profile-name">読み込み中</p>
+        <p id="viewerRelationship" class="profile-meta"></p>
+      </div>
+      <div>
+        <p id="clientName" class="profile-name">利用者情報</p>
+        <p id="clientNumber" class="profile-meta"></p>
+      </div>
+    </section>
+
+    <section class="grid grid-3" style="margin-top:18px" aria-label="件数概要">
+      <article class="card stat-card"><div class="stat-label">今後の訪問予定</div><div id="upcomingCount" class="stat-value">0</div><div class="stat-note">60日以内</div></article>
+      <article class="card stat-card"><div class="stat-label">最近の訪問報告</div><div id="reportCount" class="stat-value">0</div><div class="stat-note">公開済みのみ</div></article>
+      <article class="card stat-card"><div class="stat-label">対応中の連絡</div><div id="messageCount" class="stat-value">0</div><div class="stat-note">ご自身の連絡のみ</div></article>
+    </section>
+
+    <section class="dashboard-grid" style="margin-top:18px">
+      <article class="card span-7">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">次回の訪問</h2>
+            <p class="card-description">変更がある場合は事業所から連絡します。</p>
+          </div>
+          <div id="nextVisitStatus"></div>
+        </div>
+        <p id="nextVisitDate" class="profile-name">読み込み中</p>
+        <p id="nextVisitService" class="card-description"></p>
+      </article>
+      <aside class="card span-5">
+        <h2 class="card-title">事業所へ連絡</h2>
+        <p class="card-description">急を要する場合は電話をご利用ください。</p>
+        <div class="button-row">
+          <button type="button" class="button button-primary" data-open-modal="inquiryModal">予定変更・お問い合わせ</button>
+          <button type="button" class="button button-secondary" data-open-modal="messageModal">メッセージを送る</button>
+        </div>
+        <p id="contactPermissionNote" class="help" hidden>現在、このLINEアカウントからの連絡送信は許可されていません。</p>
+      </aside>
+
+      <section id="visitsSection" class="card span-12" aria-labelledby="visitsTitle">
+        <div class="card-header">
+          <div><h2 id="visitsTitle" class="card-title">訪問予定</h2><p class="card-description">ご家族へ公開可能な予定だけを表示します。</p></div>
+          <button id="loadAllVisits" type="button" class="button button-ghost button-small">すべて表示</button>
+        </div>
+        <ul id="visitList" class="list"><li class="empty">読み込み中です。</li></ul>
+      </section>
+
+      <section id="reportsSection" class="card span-12" aria-labelledby="reportsTitle">
+        <div class="card-header">
+          <div><h2 id="reportsTitle" class="card-title">訪問のご報告</h2><p class="card-description">事業所が確認し、公開を承認した内容だけを表示します。</p></div>
+          <button id="loadAllReports" type="button" class="button button-ghost button-small">すべて表示</button>
+        </div>
+        <ul id="reportList" class="list"><li class="empty">読み込み中です。</li></ul>
+      </section>
+
+      <section class="card span-12" aria-labelledby="messagesTitle">
+        <div class="card-header">
+          <div><h2 id="messagesTitle" class="card-title">事業所との連絡</h2><p class="card-description">このLINEアカウントから送受信した連絡だけを表示します。</p></div>
+          <button id="loadAllMessages" type="button" class="button button-ghost button-small">すべて表示</button>
+        </div>
+        <ul id="messageList" class="list"><li class="empty">読み込み中です。</li></ul>
+      </section>
+    </section>
+
+    <section class="alert alert-info" style="margin-top:18px">
+      <strong class="alert-title">表示されない情報</strong>
+      職員間の内部申し送り、鍵・入室情報、職員向け注意事項、未承認の訪問記録はこの画面には表示されません。
+    </section>
+
+    <footer class="footer">
+      <p><span class="js-office-name">DPRO訪問介護ステーション</span></p>
+      <p>緊急時はLINEの返信を待たず、事業所または119番へ電話してください。</p>
+    </footer>
+  </main>
+
+  <div id="messageModal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="messageModalTitle">
+      <div class="modal-header"><div><h2 id="messageModalTitle" class="modal-title">メッセージを送る</h2><p class="card-description">通常の連絡にご利用ください。</p></div><button type="button" class="icon-button" data-close-modal aria-label="閉じる">×</button></div>
+      <div class="alert alert-warning" style="margin:18px 0">緊急連絡には使用しないでください。転倒、急変、事故などは電話で連絡してください。</div>
+      <form id="messageForm">
+        <div class="field"><label for="messageSubject">件名</label><input id="messageSubject" name="subject" type="text" maxlength="100" placeholder="例：次回訪問について"></div>
+        <div class="field" style="margin-top:14px"><label for="messageImportance">重要度</label><select id="messageImportance" name="importance"><option value="normal">通常</option><option value="important">重要</option><option value="urgent">至急</option></select></div>
+        <div class="field" style="margin-top:14px"><label for="messageText">連絡内容<span class="required">必須</span></label><textarea id="messageText" name="message_text" maxlength="2000" required placeholder="事業所へ伝えたい内容をご入力ください。"></textarea></div>
+        <div id="messageError" class="alert alert-danger" hidden style="margin-top:14px"></div>
+        <div class="button-row"><button type="submit" class="button button-primary">送信する</button><button type="button" class="button button-ghost" data-close-modal>戻る</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div id="inquiryModal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="inquiryModalTitle">
+      <div class="modal-header"><div><h2 id="inquiryModalTitle" class="modal-title">予定変更・お問い合わせ</h2><p class="card-description">内容を確認後、事業所から連絡します。</p></div><button type="button" class="icon-button" data-close-modal aria-label="閉じる">×</button></div>
+      <form id="inquiryForm" style="margin-top:18px">
+        <div class="field"><label for="inquiryType">お問い合わせ種別<span class="required">必須</span></label><select id="inquiryType" name="inquiry_type" required><option value="schedule_change">訪問予定の変更</option><option value="absence">訪問のキャンセル・不在</option><option value="service_question">サービス内容の確認</option><option value="document">書類について</option><option value="other">その他</option></select></div>
+        <div class="field" style="margin-top:14px"><label for="inquirySubject">件名</label><input id="inquirySubject" name="subject" type="text" maxlength="100" placeholder="例：7月25日の訪問時間"></div>
+        <div class="field" style="margin-top:14px"><label for="inquiryUrgency">緊急度</label><select id="inquiryUrgency" name="urgency"><option value="normal">通常</option><option value="important">重要</option><option value="urgent">至急</option></select></div>
+        <div class="field" style="margin-top:14px"><label for="inquiryDetail">お問い合わせ内容<span class="required">必須</span></label><textarea id="inquiryDetail" name="detail" maxlength="2000" required placeholder="変更を希望する日時や詳しい内容をご入力ください。"></textarea></div>
+        <div id="inquiryError" class="alert alert-danger" hidden style="margin-top:14px"></div>
+        <div class="button-row"><button type="submit" class="button button-primary">送信する</button><button type="button" class="button button-ghost" data-close-modal>戻る</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
+    <div class="loader-card"><div class="spinner" aria-hidden="true"></div><strong data-loading-message>読み込み中です</strong></div>
+  </div>
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+</body>
+</html>
