@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DPRO訪問介護 営業前system-check">
+  <meta name="theme-color" content="#0b6b62">
+  <title>営業前system-check｜DPRO訪問介護</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="system-check.css">
+</head>
+<body class="check-body">
+  <header class="check-header"><div class="check-header-inner"><div class="check-brand"><span>DP</span><div><strong>営業前 system-check</strong><small>DPRO訪問介護・家族連絡 LINE</small></div></div><div class="header-actions"><a class="button button-secondary compact" href="owner.html?demo=1">管理画面</a><a class="button button-secondary compact" href="settings.html?demo=1">事業所設定</a></div></div></header>
+  <main class="check-shell">
+    <section class="check-hero"><div><p class="eyebrow">PRE-SALES VALIDATION</p><h1>営業前に、API・DB・公開画面を一括確認</h1><p>異常項目だけを赤く表示し、デモデータの再準備もこの画面から行えます。</p></div><div class="overall-card pending" id="overallCard"><span>総合判定</span><strong id="overallText">未実行</strong><small id="overallCount">-</small></div></section>
+    <section class="demo-banner" id="demoBanner" hidden><strong>デモ環境</strong><span>管理コード1234でデモ準備を実行できます。</span></section>
+    <section class="control-card">
+      <div class="code-control"><label>管理コード<input id="adminCode" type="password" inputmode="numeric" maxlength="20"></label><button class="button button-secondary" id="clearAdminCode" type="button">削除</button></div>
+      <div class="control-actions"><button class="button button-primary" id="runCheck" type="button">一括チェック</button><button class="button button-secondary" id="prepareDemo" type="button">デモデータを準備</button><button class="button button-secondary" id="copyJson" type="button">JSONをコピー</button></div>
+    </section>
+    <section class="summary-grid" id="summaryGrid"></section>
+    <section class="check-grid"><article class="check-card span-2"><div class="card-heading"><div><h2>Worker・Supabase検査</h2><p>system-check APIが返した全検査項目です。</p></div><a id="workerSystemLink" target="_blank" rel="noopener">API JSONを開く</a></div><div id="apiGroups" class="api-groups"><div class="empty">「一括チェック」を押してください。</div></div></article><article class="check-card"><div class="card-heading"><div><h2>公開画面</h2><p>404や配置漏れを確認します。</p></div></div><div id="pageChecks" class="page-list"></div></article></section>
+    <section class="check-card url-card"><div class="card-heading"><div><h2>公開URL</h2><p>営業・操作確認で使用するURLです。</p></div></div><div id="urlList" class="url-list"></div></section>
+  </main>
+  <div class="loading-overlay" id="loadingOverlay" hidden><span class="spinner"></span><strong>検査中</strong></div><div class="toast" id="toast" hidden></div>
+  <script src="config.js"></script><script src="system-check.js"></script>
+</body>
+</html>

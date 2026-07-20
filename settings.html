@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DPRO訪問介護 事業所設定・LINE連携承認">
+  <meta name="theme-color" content="#0b6b62">
+  <title>事業所設定・LINE連携｜DPRO訪問介護</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body class="settings-body">
+  <header class="settings-header">
+    <div class="settings-header-inner">
+      <div class="settings-brand"><span class="brand-mark">DP</span><div><strong>事業所設定・LINE連携</strong><small>DPRO訪問介護ステーション</small></div></div>
+      <div class="header-actions">
+        <a class="button button-secondary compact" href="owner.html?demo=1">管理画面</a>
+        <a class="button button-secondary compact" href="system-check.html?demo=1">system-check</a>
+        <button class="button button-secondary compact" id="reloadButton" type="button">更新</button>
+        <button class="button button-secondary compact" id="logoutButton" type="button" hidden>ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="settings-login-wrap" id="loginPanel">
+    <section class="settings-login-card">
+      <p class="eyebrow">SETTINGS ACCESS</p>
+      <h1>事業所設定とLINE連携申請を管理</h1>
+      <p>連絡先、受付時間、本人・家族画面、LINE連携申請を安全に管理します。</p>
+      <form id="loginForm" class="login-form">
+        <label for="adminCode">管理コード</label>
+        <div class="code-row">
+          <input id="adminCode" type="password" inputmode="numeric" maxlength="20" autocomplete="current-password" required>
+          <button class="button button-secondary" id="clearAdminCode" type="button">削除</button>
+        </div>
+        <button class="button button-primary" type="submit">設定画面を開く</button>
+      </form>
+    </section>
+  </main>
+
+  <main class="settings-app" id="settingsApp" hidden>
+    <section class="settings-hero">
+      <div><p class="eyebrow">OFFICE SETTINGS</p><h1 id="pageOfficeName">DPRO訪問介護ステーション</h1><p>本番導入前に、事業所情報とLINE連携の運用方法を確認してください。</p></div>
+      <div class="summary-box"><span>申請中</span><strong id="pendingLinkCount">0</strong><small>LINE連携</small></div>
+    </section>
+    <section class="demo-banner" id="demoBanner" hidden><strong>デモ操作中</strong><span>架空の申請者・利用者情報を使用しています。</span></section>
+
+    <nav class="settings-tabs" aria-label="設定メニュー">
+      <button class="tab-button active" data-tab="office" type="button">事業所設定</button>
+      <button class="tab-button" data-tab="line" type="button">LINE連携承認 <span id="lineTabBadge">0</span></button>
+    </nav>
+
+    <section class="tab-panel active" data-panel="office">
+      <form id="settingsForm" class="settings-form">
+        <section class="settings-card">
+          <div class="section-heading"><div><h2>事業所基本情報</h2><p>利用者・家族画面や緊急連絡に使用します。</p></div><span class="version-badge" id="settingsVersion">version -</span></div>
+          <div class="form-grid two-columns">
+            <label>事業所名 <span class="required">必須</span><input id="officeName" maxlength="120" required></label>
+            <label>管理者・サービス提供責任者名<input id="managerName" maxlength="100"></label>
+            <label>電話番号 <span class="required">必須</span><input id="officePhone" inputmode="tel" maxlength="30" required></label>
+            <label>緊急連絡先<input id="emergencyPhone" inputmode="tel" maxlength="30"></label>
+            <label>FAX<input id="fax" inputmode="tel" maxlength="30"></label>
+            <label>メールアドレス<input id="email" type="email" maxlength="255"></label>
+            <label>郵便番号<input id="postalCode" inputmode="numeric" maxlength="12"></label>
+            <label class="span-2">住所<input id="address" maxlength="500"></label>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="section-heading"><div><h2>事業所の連絡受付時間</h2><p>訪問サービス時間ではなく、事業所が電話・LINE対応する時間です。30分単位で設定します。</p></div></div>
+          <div id="businessHours" class="hours-list"></div>
+        </section>
+
+        <section class="settings-card">
+          <div class="section-heading"><div><h2>訪問・記録設定</h2><p>現場スタッフへの警告と家族報告の安全設定です。</p></div></div>
+          <div class="form-grid three-columns">
+            <label>早着警告（分）<input id="earlyLimit" type="number" min="0" max="180" step="5"></label>
+            <label>遅延警告（分）<input id="delayAlert" type="number" min="0" max="180" step="5"></label>
+            <label>署名付きURL有効時間（分）<input id="signedUrlMinutes" type="number" min="1" max="60" step="1"></label>
+          </div>
+          <div class="switch-grid">
+            <label class="switch-row"><input id="familyApproval" type="checkbox"><span><strong>家族報告は管理者承認後に公開</strong><small>内部申し送りと家族向けコメントを分離します。</small></span></label>
+            <label class="switch-row"><input id="allowLocation" type="checkbox"><span><strong>スタッフ位置情報の利用を許可</strong><small>本番で必要性と同意を確認した場合だけ有効にします。</small></span></label>
+            <label class="switch-row"><input id="familyPortalEnabled" type="checkbox"><span><strong>ご家族専用画面を有効化</strong><small>停止すると家族APIも利用できなくなります。</small></span></label>
+            <label class="switch-row"><input id="memberPortalEnabled" type="checkbox"><span><strong>ご本人専用画面を有効化</strong><small>停止すると本人APIも利用できなくなります。</small></span></label>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="section-heading"><div><h2>LINE・公開案内</h2><p>LINE公式アカウントと本人確認の運用を設定します。</p></div></div>
+          <div class="form-grid two-columns">
+            <label>LINE公式アカウント名<input id="lineAccountName" maxlength="120"></label>
+            <label>LINE公式アカウントURL<input id="lineAccountUrl" type="url" maxlength="500"></label>
+          </div>
+          <div class="switch-grid">
+            <label class="switch-row fixed"><input type="checkbox" checked disabled><span><strong>LINE連携は事業所承認を必須にする</strong><small>情報漏えい防止のため安全設定として固定しています。</small></span></label>
+            <label class="switch-row"><input id="identityMatchRequired" type="checkbox"><span><strong>登録情報との一致を確認して承認</strong><small>利用者番号、氏名、登録電話番号を画面で確認します。</small></span></label>
+          </div>
+          <div class="form-grid two-columns">
+            <label>利用者・家族向け公開案内<textarea id="publicNotice" rows="4" maxlength="2000"></textarea></label>
+            <label>緊急時の案内<textarea id="emergencyNote" rows="4" maxlength="2000"></textarea></label>
+          </div>
+        </section>
+
+        <div class="sticky-actions"><span id="saveHint">変更内容は監査ログに記録されます。</span><button class="button button-primary save-button" type="submit">設定を保存</button></div>
+      </form>
+    </section>
+
+    <section class="tab-panel" data-panel="line">
+      <div class="line-summary-grid">
+        <article><span>申請中</span><strong id="summaryPending">0</strong></article>
+        <article><span>承認済み</span><strong id="summaryApproved">0</strong></article>
+        <article><span>却下</span><strong id="summaryRejected">0</strong></article>
+      </div>
+      <section class="settings-card">
+        <div class="section-heading"><div><h2>承認待ちのLINE連携申請</h2><p>登録情報を確認し、閲覧権限を選択して承認します。</p></div></div>
+        <div id="pendingLinkList" class="link-list"></div>
+      </section>
+      <section class="settings-card">
+        <div class="section-heading"><div><h2>処理履歴</h2><p>最近の承認・却下結果です。</p></div></div>
+        <div id="linkHistoryList" class="link-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog class="approve-dialog" id="approveDialog">
+    <form id="approveForm" class="dialog-panel">
+      <header><div><p class="eyebrow">LINE LINK APPROVAL</p><h2 id="approveApplicant">申請者</h2></div><button id="closeApproveDialog" class="dialog-close" type="button">×</button></header>
+      <div class="dialog-body">
+        <div class="request-detail" id="approveRequestDetail"></div>
+        <label>紐付ける利用者 <span class="required">必須</span><select id="approveClient" required></select></label>
+        <label>登録済み家族情報<select id="approveFamily"><option value="">新しい家族情報として登録</option></select></label>
+        <label>続柄<input id="approveRelationship" maxlength="30" placeholder="例：長女"></label>
+        <fieldset><legend>許可する機能</legend>
+          <label><input id="canViewSchedules" type="checkbox" checked> 訪問予定の閲覧</label>
+          <label><input id="canViewReports" type="checkbox" checked> 公開済み報告の閲覧</label>
+          <label><input id="canSendMessages" type="checkbox" checked> メッセージ・問い合わせ</label>
+          <label><input id="canManageFamily" type="checkbox"> 家族情報の管理</label>
+        </fieldset>
+        <label>承認メモ<textarea id="consentNote" rows="3" maxlength="500" placeholder="本人確認方法など"></textarea></label>
+      </div>
+      <footer><button class="button button-secondary" id="cancelApprove" type="button">閉じる</button><button class="button button-primary" type="submit">確認して承認</button></footer>
+    </form>
+  </dialog>
+
+  <div class="loading-overlay" id="loadingOverlay" hidden><span class="spinner"></span><strong>読み込み中</strong></div>
+  <div class="toast" id="toast" hidden></div>
+  <script src="config.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
