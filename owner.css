@@ -3,3 +3,10 @@
 @media(max-width:1200px){.summary-grid{grid-template-columns:repeat(3,1fr)}.dashboard-grid{grid-template-columns:1fr 1fr}.staff-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:900px){.owner-app{grid-template-columns:1fr}.owner-sidebar{position:static;height:auto}.owner-sidebar nav{grid-template-columns:repeat(4,1fr)}.sidebar-links{grid-template-columns:repeat(2,1fr)}.owner-main{padding:22px}.dashboard-grid{grid-template-columns:1fr}.span-2{grid-column:auto}.owner-topbar{align-items:start}.staff-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.owner-header-inner{padding:10px 14px}.owner-brand small{display:none}.owner-login-card{padding:24px}.owner-login-card h1,.owner-topbar h1{font-size:26px}.owner-sidebar nav{grid-template-columns:1fr 1fr}.owner-main{padding:16px 12px 50px}.owner-topbar{display:grid}.summary-grid{grid-template-columns:1fr 1fr}.timeline-item{grid-template-columns:1fr}.work-item{grid-template-columns:1fr}.work-actions{justify-content:start}.detail-grid{grid-template-columns:1fr}.dialog-panel>footer{display:grid;grid-template-columns:1fr 1fr}}
+
+/* STEP HOMECARE-6-R1: 事業所名を単語途中で切らず、自然な位置で折り返す */
+.sidebar-office strong{
+  line-height:1.45;
+  word-break:keep-all;
+  overflow-wrap:normal;
+}

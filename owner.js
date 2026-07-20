@@ -24,6 +24,12 @@
   function serviceLabel(v){return ({physical_care:'身体介護',daily_living:'生活援助',combined:'身体介護＋生活援助',outing:'通院・外出介助',self_pay:'自費サービス',other:'その他'})[v] || v || '未設定';}
   function roleLabel(v){return ({owner:'オーナー',manager:'管理者',service_coordinator:'サービス提供責任者',helper:'訪問介護員',clerk:'事務',viewer:'閲覧'})[v] || v || ''}
   function incidentLabel(v){return ({near_miss:'ヒヤリハット',fall:'転倒',injury:'外傷',medication_concern:'服薬に関する懸念',missing_item:'物品紛失',property_damage:'物損',complaint:'苦情',other:'その他'})[v] || v;}
+  function officeNameHtml(value){
+    const safe = escapeHtml(value || '訪問介護事業所');
+    return safe
+      .replace('DPRO訪問介護ステーション', 'DPRO訪問介護<wbr>ステーション')
+      .replace('訪問介護ステーション', '訪問介護<wbr>ステーション');
+  }
   function showToast(message, error=false){const el=$('#toast');el.textContent=message;el.classList.toggle('error',error);el.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.hidden=true,4300);}
   function setLoading(active){$('#loadingOverlay').hidden=!active;}
 
@@ -55,7 +61,7 @@
   function pill(text,type=''){return `<span class="status-pill ${type}">${escapeHtml(text)}</span>`;}
 
   function renderAll(data){
-    $('#officeName').textContent=data.office?.office_name||'訪問介護事業所';$('#ownerDateLabel').textContent=formatDate(data.date);$('#demoBanner').hidden=!demo;
+    $('#officeName').innerHTML=officeNameHtml(data.office?.office_name);$('#ownerDateLabel').textContent=formatDate(data.date);$('#demoBanner').hidden=!demo;
     $('#navRecordBadge').textContent=data.counts.pending_records||0;$('#navReportBadge').textContent=data.counts.pending_family_reports||0;$('#navHandoverBadge').textContent=data.counts.open_handovers||0;$('#navInquiryBadge').textContent=data.counts.open_inquiries||0;$('#navIncidentBadge').textContent=data.counts.open_incidents||0;
     renderSummary(data.counts);renderVisits(data.visits||[]);renderPriority(data);renderOfficeStatus(data);renderRecords(data.records||[]);renderReports(data.family_reports||[]);renderHandovers(data.handovers||[]);renderInquiries(data.inquiries||[]);renderIncidents(data.incidents||[]);renderStaff(data.staff||[]);
   }
