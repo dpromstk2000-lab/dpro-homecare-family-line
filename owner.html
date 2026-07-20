@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DPRO訪問介護 オーナーPC管理画面">
+  <meta name="theme-color" content="#0b6b62">
+  <title>オーナー管理｜DPRO訪問介護</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="owner.css">
+</head>
+<body class="owner-body">
+  <header class="owner-header">
+    <div class="owner-header-inner">
+      <div class="owner-brand"><span class="brand-mark">DP</span><div><strong>訪問介護 管理センター</strong><small>DPRO訪問介護ステーション</small></div></div>
+      <div class="owner-header-actions">
+        <button class="button button-secondary compact" id="reloadButton" type="button">更新</button>
+        <button class="button button-secondary compact" id="logoutButton" type="button" hidden>ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="owner-login-wrap" id="loginPanel">
+    <section class="owner-login-card">
+      <p class="owner-eyebrow">OWNER ACCESS</p>
+      <h1>事業所の状況を、ひとつの画面で確認</h1>
+      <p>訪問状況、提出記録、家族公開、申し送り、事故・問い合わせを管理します。</p>
+      <form id="loginForm" class="owner-login-form">
+        <label for="adminCode">管理コード</label>
+        <div class="owner-code-row">
+          <input id="adminCode" type="password" inputmode="numeric" maxlength="20" autocomplete="current-password" required>
+          <button class="button button-secondary" id="clearAdminCode" type="button">削除</button>
+        </div>
+        <button class="button button-primary" type="submit">管理画面を開く</button>
+      </form>
+      <p class="owner-help">本番環境では管理コードだけに依存せず、事業所の認証方式へ切り替えます。</p>
+    </section>
+  </main>
+
+  <div class="owner-app" id="ownerApp" hidden>
+    <aside class="owner-sidebar">
+      <div class="sidebar-office"><strong id="officeName">事業所名</strong><span id="ownerDateLabel"></span></div>
+      <nav aria-label="管理メニュー">
+        <button class="nav-button active" data-section="dashboard">今日の稼働</button>
+        <button class="nav-button" data-section="records">記録確認 <span id="navRecordBadge">0</span></button>
+        <button class="nav-button" data-section="reports">家族公開 <span id="navReportBadge">0</span></button>
+        <button class="nav-button" data-section="handovers">申し送り <span id="navHandoverBadge">0</span></button>
+        <button class="nav-button" data-section="inquiries">問い合わせ <span id="navInquiryBadge">0</span></button>
+        <button class="nav-button" data-section="incidents">事故・ヒヤリ <span id="navIncidentBadge">0</span></button>
+        <button class="nav-button" data-section="clients">利用者検索</button>
+        <button class="nav-button" data-section="staff">スタッフ</button>
+      </nav>
+      <div class="sidebar-links">
+        <a href="schedule.html?demo=1">訪問予定・定期予定</a>
+        <a href="staff.html?demo=1">スタッフ画面</a>
+        <a href="family.html?demo=1">家族画面</a>
+        <a href="system-check.html" id="systemCheckLink">system-check</a>
+      </div>
+    </aside>
+
+    <section class="owner-main">
+      <section class="owner-topbar">
+        <div><p class="owner-eyebrow">OWNER DASHBOARD</p><h1>訪問介護・家族連絡</h1><p>未確認項目を優先して表示します。</p></div>
+        <label class="date-label">表示日<input id="workDate" type="date"></label>
+      </section>
+
+      <section class="owner-demo-banner" id="demoBanner" hidden><strong>デモ操作中</strong><span>架空の利用者・スタッフ情報を使用しています。</span></section>
+
+      <section class="owner-section active" data-owner-section="dashboard">
+        <div class="summary-grid" id="summaryGrid"></div>
+        <div class="dashboard-grid">
+          <article class="owner-card span-2"><div class="card-heading"><div><h2>本日の訪問</h2><p>予定・訪問中・完了・未割当てを確認します。</p></div><a class="text-link" href="schedule.html?demo=1">予定管理を開く</a></div><div id="todayVisitList" class="timeline-list"></div></article>
+          <article class="owner-card"><div class="card-heading"><div><h2>優先対応</h2><p>緊急度の高い項目です。</p></div></div><div id="priorityList" class="compact-list"></div></article>
+          <article class="owner-card"><div class="card-heading"><div><h2>事業所状況</h2><p>利用者・スタッフの稼働状況です。</p></div></div><div id="officeStatus" class="metric-list"></div></article>
+        </div>
+      </section>
+
+      <section class="owner-section" data-owner-section="records"><div class="section-header"><div><h2>訪問記録の確認</h2><p>提出済み記録を承認または差戻します。</p></div></div><div id="recordList" class="work-list"></div></section>
+      <section class="owner-section" data-owner-section="reports"><div class="section-header"><div><h2>家族公開の承認</h2><p>訪問記録の承認後、家族向けコメントだけを公開します。</p></div></div><div id="reportList" class="work-list"></div></section>
+      <section class="owner-section" data-owner-section="handovers"><div class="section-header"><div><h2>未解決の申し送り</h2><p>重要度と期限を確認し、対応済みにします。</p></div></div><div id="handoverListOwner" class="work-list"></div></section>
+      <section class="owner-section" data-owner-section="inquiries"><div class="section-header"><div><h2>問い合わせ管理</h2><p>LINE・電話等の連絡を担当者と状態で管理します。</p></div></div><div id="inquiryList" class="work-list"></div></section>
+      <section class="owner-section" data-owner-section="incidents"><div class="section-header"><div><h2>事故・ヒヤリハット</h2><p>確認、家族連絡、対応完了まで記録します。</p></div></div><div id="incidentList" class="work-list"></div></section>
+      <section class="owner-section" data-owner-section="clients">
+        <div class="section-header"><div><h2>利用者検索</h2><p>氏名、利用者番号、電話番号で検索します。</p></div></div>
+        <form id="clientSearchForm" class="search-bar"><input id="clientSearchInput" placeholder="例：福田 花子／HC0001／090..." maxlength="100"><button class="button button-primary" type="submit">検索</button></form>
+        <div id="clientSearchResult" class="work-list"></div>
+      </section>
+      <section class="owner-section" data-owner-section="staff"><div class="section-header"><div><h2>スタッフ一覧</h2><p>役割、資格、稼働状態を確認します。</p></div></div><div id="staffListOwner" class="staff-grid"></div></section>
+    </section>
+  </div>
+
+  <dialog id="recordDialog" class="owner-dialog">
+    <div class="dialog-panel">
+      <header><div><p class="owner-eyebrow" id="recordDialogStatus">RECORD REVIEW</p><h2 id="recordDialogTitle">訪問記録</h2><p id="recordDialogMeta"></p></div><button class="dialog-close" id="closeRecordDialog" type="button">×</button></header>
+      <div class="dialog-content" id="recordDialogContent"></div>
+      <label class="dialog-comment">確認コメント<textarea id="recordReviewComment" rows="3" maxlength="3000" placeholder="承認時は任意、差戻し時は必須"></textarea></label>
+      <footer><button class="button button-danger" id="returnRecordButton" type="button">差戻す</button><button class="button button-primary" id="approveRecordButton" type="button">承認する</button></footer>
+    </div>
+  </dialog>
+
+  <div class="loading-overlay" id="loadingOverlay" hidden><div class="spinner"></div><span>読み込み中...</span></div>
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="config.js"></script>
+  <script src="owner.js"></script>
+</body>
+</html>
