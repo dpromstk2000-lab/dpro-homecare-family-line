@@ -10,3 +10,8 @@
   word-break:keep-all;
   overflow-wrap:normal;
 }
+
+/* STEP HOMECARE-6-R2: 事業所名を明示的な2行表示に固定 */
+.sidebar-office strong br{
+  display:block;
+}

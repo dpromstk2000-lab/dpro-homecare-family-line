@@ -27,8 +27,8 @@
   function officeNameHtml(value){
     const safe = escapeHtml(value || '訪問介護事業所');
     return safe
-      .replace('DPRO訪問介護ステーション', 'DPRO訪問介護<wbr>ステーション')
-      .replace('訪問介護ステーション', '訪問介護<wbr>ステーション');
+      .replace('DPRO訪問介護ステーション', 'DPRO訪問介護<br>ステーション')
+      .replace('訪問介護ステーション', '訪問介護<br>ステーション');
   }
   function showToast(message, error=false){const el=$('#toast');el.textContent=message;el.classList.toggle('error',error);el.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.hidden=true,4300);}
   function setLoading(active){$('#loadingOverlay').hidden=!active;}
