@@ -22,3 +22,18 @@ button{touch-action:manipulation}
 .loading-overlay{position:fixed;inset:0;z-index:100;background:rgba(255,255,255,.74);display:grid;place-items:center;align-content:center;gap:12px}.spinner{width:45px;height:45px;border:4px solid #c6d9d5;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.toast{position:fixed;right:24px;bottom:24px;z-index:120;max-width:min(500px,calc(100vw - 48px));padding:14px 19px;border-radius:13px;background:#174b44;color:#fff;box-shadow:var(--shadow)}.toast.error{background:#a42525}
 @media(max-width:1050px){.summary-strip{grid-template-columns:repeat(3,1fr)}.two-column{grid-template-columns:1fr}.ipad-tabs{grid-template-columns:repeat(3,1fr)}.task-item{grid-template-columns:1fr}.task-actions{justify-content:start}.span-wide{grid-column:auto}}
 @media(max-width:720px){body{font-size:16px}.ipad-header{padding:9px 12px}.ipad-brand small{display:none}.header-actions .button{padding:9px 12px}.login-shell{padding:18px}.login-card{padding:25px}.login-card h1,.ipad-topbar h1{font-size:27px}.ipad-app{padding:18px 12px 55px}.ipad-topbar{display:grid}.date-control{min-width:0}.summary-strip{grid-template-columns:1fr 1fr}.ipad-tabs{top:64px;grid-template-columns:repeat(2,1fr)}.visit-item{grid-template-columns:1fr}.staff-check-list{grid-template-columns:1fr}.dialog-panel>footer{display:grid;grid-template-columns:1fr 1fr}.detail-grid{grid-template-columns:1fr}}
+
+/* STEP HOMECARE-12: UI/UX横断ブラッシュアップ */
+.status-pill,
+.importance-pill {
+  min-height: 36px;
+  font-size: 14px;
+}
+.tab-button { font-size: 16px; }
+.task-main p,
+.visit-main p,
+.help { font-size: 15px; }
+@media(max-width:720px) {
+  body { font-size: 17px; }
+  .button { min-height: 50px; }
+}

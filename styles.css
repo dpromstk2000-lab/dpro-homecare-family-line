@@ -325,3 +325,25 @@ input::placeholder, textarea::placeholder { color: #85918f; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* STEP HOMECARE-12: UI/UX横断ブラッシュアップ */
+:root { --tap: 50px; }
+.button-small,
+.tab-button {
+  min-height: 48px;
+  font-size: 16px;
+}
+.status-pill {
+  min-height: 30px;
+  font-size: 14px;
+}
+.quick-action strong { font-size: 17px; }
+.quick-action span,
+.help,
+.list-meta,
+.profile-meta { font-size: 14px; }
+@media (max-width: 520px) {
+  body { font-size: 17px; }
+  .brand-title { font-size: 17px; }
+  .button-row > .button { min-height: 52px; }
+}

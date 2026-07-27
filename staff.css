@@ -155,3 +155,42 @@
   .visit-card-head { display: grid; grid-template-columns: 1fr auto; }
   .emergency-actions, .dialog-buttons { grid-template-columns: 1fr; }
 }
+
+/* STEP HOMECARE-12: UI/UX横断ブラッシュアップ */
+:root {
+  --ink: var(--text, #172422);
+  --line: var(--border, #d7e0de);
+  --shadow-soft: var(--shadow, 0 10px 28px rgba(20, 55, 50, 0.09));
+}
+.staff-eyebrow,
+.count-badge,
+.required-badge,
+.status-pill,
+.handover-flag { font-size: 14px; }
+.status-pill {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+}
+.form-help,
+.office-contact span,
+.date-control label span,
+.staff-summary span,
+.visit-meta,
+.client-alert strong,
+.staff-chip,
+.required-text,
+.plan-item-instruction { font-size: 15px; }
+.result-buttons span {
+  min-height: 48px;
+  font-size: 15px;
+  padding: 7px;
+}
+.action-large {
+  min-height: 56px;
+  font-size: 17px;
+}
+@media (max-width: 700px) {
+  body { font-size: 17px; }
+  .record-actions .button { min-height: 56px; }
+}
