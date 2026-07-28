@@ -4,10 +4,10 @@
   const API_BASE = String(CONFIG.API_BASE || '').replace(/\/+$/, '');
   const OFFICE_CODE = CONFIG.OFFICE_CODE || 'dpro_homecare_demo';
   const TIMEOUT = Number(CONFIG.REQUEST_TIMEOUT_MS || 15000);
-  const STORAGE_KEY = CONFIG.OWNER_ADMIN_STORAGE_KEY || 'dpro_homecare_owner_admin_code';
+  const STORAGE_KEY = CONFIG.ADMIN_SESSION_STORAGE_KEY || 'dpro_homecare_admin_session';
   const params = new URLSearchParams(location.search);
   const demo = ['1','true','yes'].includes(String(params.get('demo') || '').toLowerCase());
-  const state = { adminCode: '', data: null, selectedRecordId: null };
+  const state = { adminSession: '', data: null, selectedRecordId: null };
   const $ = (q, root = document) => root.querySelector(q);
   const $$ = (q, root = document) => [...root.querySelectorAll(q)];
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -38,7 +38,7 @@
     const timer = setTimeout(() => controller.abort(), TIMEOUT);
     const url = new URL(`${API_BASE}${path}`);
     if (!url.searchParams.has('office_code')) url.searchParams.set('office_code', OFFICE_CODE);
-    const headers = {'Content-Type':'application/json','X-Admin-Code':state.adminCode,...(options.headers||{})};
+    const headers = {'Content-Type':'application/json','X-Admin-Session':state.adminSession,...(options.headers||{})};
     try {
       const response = await fetch(url,{method:options.method||'GET',headers,signal:controller.signal,...(options.body===undefined?{}:{body:JSON.stringify(options.body)})});
       const data = await response.json().catch(()=>({}));
@@ -52,8 +52,38 @@
   }
 
   function loginView(show){$('#loginPanel').hidden=!show;$('#ownerApp').hidden=show;$('#logoutButton').hidden=show;}
-  async function login(event){event?.preventDefault();state.adminCode=$('#adminCode').value.trim();if(!state.adminCode)return showToast('管理コードを入力してください。',true);setLoading(true);try{await api('/admin/verify',{method:'POST',body:{admin_code:state.adminCode}});sessionStorage.setItem(STORAGE_KEY,state.adminCode);loginView(false);await loadOverview();showToast('管理画面を開きました。');}catch(e){showToast(e.message,true);loginView(true);}finally{setLoading(false);}}
-  function logout(notify=true){state.adminCode='';state.data=null;sessionStorage.removeItem(STORAGE_KEY);$('#adminCode').value=demo?'1234':'';loginView(true);if(notify)showToast('ログアウトしました。');}
+  async function login(event){
+    event?.preventDefault();
+    const adminCode=$('#adminCode').value.trim();
+    if(!adminCode)return showToast('管理コードを入力してください。',true);
+    setLoading(true);
+    try{
+      const result=await api('/admin/verify',{method:'POST',body:{admin_code:adminCode,scope:'owner'}});
+      state.adminSession=result.admin_session;
+      sessionStorage.setItem(STORAGE_KEY,state.adminSession);
+      $('#adminCode').value='';
+      loginView(false);
+      await loadOverview();
+      showToast('管理画面を開きました。');
+    }catch(e){
+      showToast(e.message,true);
+      loginView(true);
+    }finally{setLoading(false);}
+  }
+  async function logout(notify=true){
+    const token=state.adminSession;
+    state.adminSession='';
+    state.data=null;
+    sessionStorage.removeItem(STORAGE_KEY);
+    $('#adminCode').value=demo?'1234':'';
+    loginView(true);
+    if(token){
+      const url=new URL(`${API_BASE}/admin/logout`);
+      url.searchParams.set('office_code',OFFICE_CODE);
+      fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Session':token},body:'{}'}).catch(()=>{});
+    }
+    if(notify)showToast('ログアウトしました。');
+  }
 
   async function loadOverview(){setLoading(true);try{const date=$('#workDate').value||ymd();const data=await api(`/admin/owner/overview?date=${encodeURIComponent(date)}`);state.data=data;renderAll(data);}catch(e){showToast(e.message,true);}finally{setLoading(false);}}
   function setSection(name){$$('.owner-section').forEach((el)=>el.classList.toggle('active',el.dataset.ownerSection===name));$$('.nav-button').forEach((el)=>el.classList.toggle('active',el.dataset.section===name));window.scrollTo({top:0,behavior:'smooth'});}
@@ -88,8 +118,24 @@
   async function searchClients(event){event.preventDefault();const q=$('#clientSearchInput').value.trim();if(!q)return showToast('検索文字を入力してください。',true);setLoading(true);try{const data=await api(`/admin/clients/search?q=${encodeURIComponent(q)}`);$('#clientSearchResult').innerHTML=data.clients.length?data.clients.map(c=>`<article class="work-item"><div class="work-main"><h3>${escapeHtml(c.client_name)}・${escapeHtml(c.client_number)}</h3><p>${escapeHtml(c.status)}／${escapeHtml(c.phone||'電話未登録')}</p><p>${escapeHtml([c.address,c.building_room].filter(Boolean).join(' '))}</p><p>家族：${escapeHtml((c.families||[]).map(f=>`${f.family_name}（${f.relationship||'続柄未登録'}）`).join('、')||'未登録')}</p></div></article>`).join(''):empty('該当する利用者はいません。');}catch(e){showToast(e.message,true);}finally{setLoading(false);}}
 
   function bind(){
-    $('#loginForm').addEventListener('submit',login);$('#clearAdminCode').addEventListener('click',()=>{$('#adminCode').value='';$('#adminCode').focus();});$('#logoutButton').addEventListener('click',()=>logout());$('#reloadButton').addEventListener('click',()=>state.adminCode?loadOverview():login());$('#workDate').addEventListener('change',loadOverview);$$('.nav-button').forEach(b=>b.addEventListener('click',()=>setSection(b.dataset.section)));$('#clientSearchForm').addEventListener('submit',searchClients);$('#closeRecordDialog').addEventListener('click',()=>$('#recordDialog').close());$('#approveRecordButton').addEventListener('click',()=>recordAction('approve'));$('#returnRecordButton').addEventListener('click',()=>recordAction('return'));$('#recordDialog').addEventListener('click',(e)=>{if(e.target===$('#recordDialog'))$('#recordDialog').close();});
+    $('#loginForm').addEventListener('submit',login);$('#clearAdminCode').addEventListener('click',()=>{$('#adminCode').value='';$('#adminCode').focus();});$('#logoutButton').addEventListener('click',()=>logout());$('#reloadButton').addEventListener('click',()=>state.adminSession?loadOverview():login());$('#workDate').addEventListener('change',loadOverview);$$('.nav-button').forEach(b=>b.addEventListener('click',()=>setSection(b.dataset.section)));$('#clientSearchForm').addEventListener('submit',searchClients);$('#closeRecordDialog').addEventListener('click',()=>$('#recordDialog').close());$('#approveRecordButton').addEventListener('click',()=>recordAction('approve'));$('#returnRecordButton').addEventListener('click',()=>recordAction('return'));$('#recordDialog').addEventListener('click',(e)=>{if(e.target===$('#recordDialog'))$('#recordDialog').close();});
   }
-  async function init(){bind();$('#workDate').value=ymd();$('#systemCheckLink').href=`${API_BASE}/system-check`;$('#adminCode').value=demo?'1234':'';$('#demoBanner').hidden=!demo;const saved=sessionStorage.getItem(STORAGE_KEY);if(saved)$('#adminCode').value=saved;if(demo||saved)await login();else loginView(true);}
+  async function init(){
+    bind();
+    $('#workDate').value=ymd();
+    $('#systemCheckLink').href=`system-check.html${demo?'?demo=1':''}`;
+    $('#adminCode').value=demo?'1234':'';
+    $('#demoBanner').hidden=!demo;
+    const saved=sessionStorage.getItem(STORAGE_KEY)||'';
+    if(saved){
+      state.adminSession=saved;
+      loginView(false);
+      await loadOverview();
+    }else if(demo){
+      await login();
+    }else{
+      loginView(true);
+    }
+  }
   init().catch(e=>showToast(e.message,true));
 })();

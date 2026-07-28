@@ -71,7 +71,7 @@
     if (!base) throw new Error('APIの接続先が設定されていません。');
     const url = new URL(`${base}${path}`);
     url.searchParams.set('office_code', CONFIG.OFFICE_CODE || 'dpro_homecare_demo');
-    if (state.identity?.lineUserId) url.searchParams.set('line_user_id', state.identity.lineUserId);
+    if (state.identity?.isDemo && state.identity?.lineUserId) url.searchParams.set('line_user_id', state.identity.lineUserId);
     if (state.identity?.isDemo) {
       url.searchParams.set('demo', '1');
       if (state.identity.demoRole) url.searchParams.set('demo_role', state.identity.demoRole);
@@ -87,12 +87,15 @@
     const timeout = setTimeout(() => controller.abort(), Number(CONFIG.REQUEST_TIMEOUT_MS || 15000));
     const method = options.method || 'GET';
     const headers = { Accept: 'application/json', ...(options.headers || {}) };
+    if (state.identity?.idToken && !state.identity?.isDemo) {
+      headers.Authorization = `Bearer ${state.identity.idToken}`;
+    }
     let body;
     if (options.body !== undefined) {
       headers['Content-Type'] = 'application/json';
       body = JSON.stringify({
         ...options.body,
-        ...(state.identity?.lineUserId ? { line_user_id: state.identity.lineUserId } : {}),
+        ...(state.identity?.isDemo && state.identity?.lineUserId ? { line_user_id: state.identity.lineUserId } : {}),
         ...(state.identity?.isDemo ? { demo: true, demo_role: state.identity.demoRole || 'family' } : {})
       });
     }
@@ -169,7 +172,7 @@
 
     const liffId = String(CONFIG.LIFF_ID || '').trim();
     if (!liffId) {
-      state.identity = { lineUserId: '', displayName: '', isDemo: false, source: 'browser-preview' };
+      state.identity = { lineUserId: '', idToken: '', displayName: '', isDemo: false, source: 'browser-preview' };
       return state.identity;
     }
     if (!window.liff) throw new Error('LINE LIFFの読み込みに失敗しました。LINEから開き直してください。');
@@ -180,8 +183,11 @@
       return new Promise(() => {});
     }
     const profile = await window.liff.getProfile();
+    const idToken = window.liff.getIDToken();
+    if (!idToken) throw new Error('LINE本人確認情報を取得できません。LINEから開き直してください。');
     state.identity = {
       lineUserId: profile.userId,
+      idToken,
       displayName: profile.displayName || '',
       pictureUrl: profile.pictureUrl || '',
       isDemo: false,

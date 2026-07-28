@@ -5,11 +5,12 @@
   const API_BASE = String(CONFIG.API_BASE || '').replace(/\/+$/, '');
   const OFFICE_CODE = CONFIG.OFFICE_CODE || 'dpro_homecare_demo';
   const REQUEST_TIMEOUT_MS = Number(CONFIG.REQUEST_TIMEOUT_MS || 15000);
+  const STORAGE_KEY = CONFIG.ADMIN_SESSION_STORAGE_KEY || 'dpro_homecare_admin_session';
   const params = new URLSearchParams(location.search);
   const demo = ['1', 'true', 'yes'].includes(String(params.get('demo') || '').toLowerCase());
 
   const state = {
-    adminCode: '',
+    adminSession: '',
     options: null,
     overview: null,
     recurring: [],
@@ -85,7 +86,7 @@
     const url = new URL(`${API_BASE}${path}`);
     if (!url.searchParams.has('office_code')) url.searchParams.set('office_code', OFFICE_CODE);
     const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-    if (state.adminCode) headers['X-Admin-Code'] = state.adminCode;
+    if (state.adminSession) headers['X-Admin-Session'] = state.adminSession;
     try {
       const response = await fetch(url, {
         method: options.method || 'GET',
@@ -95,11 +96,17 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok === false) {
-        throw new Error(data.error || `通信エラー（${response.status}）`);
+        const error = new Error(data.error || `通信エラー（${response.status}）`);
+        error.status = response.status;
+        throw error;
       }
       return data;
     } catch (error) {
       if (error.name === 'AbortError') throw new Error('通信がタイムアウトしました。もう一度お試しください。');
+      if (error.status === 401) {
+        state.adminSession = '';
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
       throw error;
     } finally {
       clearTimeout(timeout);
@@ -280,8 +287,9 @@
       $('#adminGate').hidden = true;
     } catch (error) {
       showToast(error.message, true);
-      if (/管理コード/.test(error.message)) {
-        state.adminCode = '';
+      if (error.status === 401 || /ログイン|管理/.test(error.message)) {
+        state.adminSession = '';
+        sessionStorage.removeItem(STORAGE_KEY);
         $('#workspace').hidden = true;
         $('#adminGate').hidden = false;
       }
@@ -447,18 +455,28 @@
   function bindEvents() {
     $('#adminForm').addEventListener('submit', async (event) => {
       event.preventDefault();
-      state.adminCode = $('#adminCode').value.trim();
-      if (!state.adminCode) return;
-      await loadAll();
+      const adminCode = $('#adminCode').value.trim();
+      if (!adminCode) return showToast('管理コードを入力してください。', true);
+      setLoading(true);
+      try {
+        const result = await api('/admin/verify', { method: 'POST', body: { admin_code: adminCode, scope: 'schedule' } });
+        state.adminSession = result.admin_session;
+        sessionStorage.setItem(STORAGE_KEY, state.adminSession);
+        $('#adminCode').value = '';
+        await loadAll();
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        setLoading(false);
+      }
     });
 
     $('#clearAdminCode').addEventListener('click', () => {
       $('#adminCode').value = '';
-      state.adminCode = '';
       $('#adminCode').focus();
     });
 
-    $('#reloadButton').addEventListener('click', () => state.adminCode ? loadAll() : location.reload());
+    $('#reloadButton').addEventListener('click', () => state.adminSession ? loadAll() : location.reload());
     $('#applyRangeButton').addEventListener('click', loadAll);
     $('#statusFilter').addEventListener('change', renderVisits);
     $('#staffFilter').addEventListener('change', renderVisits);
@@ -553,7 +571,7 @@
     });
   }
 
-  function init() {
+  async function init() {
     if (!API_BASE) {
       showToast('API_BASEが設定されていません。', true);
       return;
@@ -563,12 +581,15 @@
     $('#dateTo').value = addDays(today, 6);
     $('#generateFrom').value = addDays(today, 1);
     $('#generateTo').value = addDays(today, 14);
-    if (demo) {
-      $('#demoBanner').hidden = false;
-      $('#adminCode').value = '1234';
-    }
+    $('#adminCode').value = demo ? '1234' : '';
+    if (demo) $('#demoBanner').hidden = false;
     bindEvents();
+    const saved = sessionStorage.getItem(STORAGE_KEY) || '';
+    if (saved) {
+      state.adminSession = saved;
+      await loadAll();
+    }
   }
 
-  init();
+  init().catch((error) => showToast(error.message, true));
 })();

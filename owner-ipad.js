@@ -5,12 +5,12 @@
   const API_BASE = String(CONFIG.API_BASE || '').replace(/\/+$/, '');
   const OFFICE_CODE = CONFIG.OFFICE_CODE || 'dpro_homecare_demo';
   const TIMEOUT = Number(CONFIG.REQUEST_TIMEOUT_MS || 15000);
-  const STORAGE_KEY = CONFIG.OWNER_ADMIN_STORAGE_KEY || 'dpro_homecare_owner_admin_code';
+  const STORAGE_KEY = CONFIG.ADMIN_SESSION_STORAGE_KEY || 'dpro_homecare_admin_session';
   const params = new URLSearchParams(location.search);
   const demo = ['1', 'true', 'yes'].includes(String(params.get('demo') || '').toLowerCase());
 
   const state = {
-    adminCode: '',
+    adminSession: '',
     data: null,
     selectedVisitId: null,
     selectedRecordId: null,
@@ -93,7 +93,7 @@
     const timer = setTimeout(() => controller.abort(), TIMEOUT);
     const url = new URL(`${API_BASE}${path}`);
     if (!url.searchParams.has('office_code')) url.searchParams.set('office_code', OFFICE_CODE);
-    const headers = { 'Content-Type': 'application/json', 'X-Admin-Code': state.adminCode, ...(options.headers || {}) };
+    const headers = { 'Content-Type': 'application/json', 'X-Admin-Session': state.adminSession, ...(options.headers || {}) };
 
     try {
       const response = await fetch(url, {
@@ -124,12 +124,14 @@
 
   async function login(event) {
     event?.preventDefault();
-    state.adminCode = $('#adminCode').value.trim();
-    if (!state.adminCode) return showToast('管理コードを入力してください。', true);
+    const adminCode = $('#adminCode').value.trim();
+    if (!adminCode) return showToast('管理コードを入力してください。', true);
     setLoading(true);
     try {
-      await api('/admin/verify', { method: 'POST', body: { admin_code: state.adminCode } });
-      sessionStorage.setItem(STORAGE_KEY, state.adminCode);
+      const result = await api('/admin/verify', { method: 'POST', body: { admin_code: adminCode, scope: 'coordinator' } });
+      state.adminSession = result.admin_session;
+      sessionStorage.setItem(STORAGE_KEY, state.adminSession);
+      $('#adminCode').value = '';
       showLogin(false);
       await loadOverview();
       showToast('iPad業務画面を開きました。');
@@ -141,12 +143,18 @@
     }
   }
 
-  function logout(notify = true) {
-    state.adminCode = '';
+  async function logout(notify = true) {
+    const token = state.adminSession;
+    state.adminSession = '';
     state.data = null;
     sessionStorage.removeItem(STORAGE_KEY);
     $('#adminCode').value = demo ? '1234' : '';
     showLogin(true);
+    if (token) {
+      const url = new URL(`${API_BASE}/admin/logout`);
+      url.searchParams.set('office_code', OFFICE_CODE);
+      fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Session': token }, body: '{}' }).catch(() => {});
+    }
     if (notify) showToast('ログアウトしました。');
   }
 
@@ -411,7 +419,7 @@
     $('#loginForm').addEventListener('submit', login);
     $('#clearAdminCode').addEventListener('click', () => { $('#adminCode').value = ''; $('#adminCode').focus(); });
     $('#logoutButton').addEventListener('click', () => logout());
-    $('#refreshButton').addEventListener('click', () => state.adminCode ? loadOverview() : login());
+    $('#refreshButton').addEventListener('click', () => state.adminSession ? loadOverview() : login());
     $('#workDate').addEventListener('change', loadOverview);
     $$('.tab-button').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.tab)));
     $$('[data-tab-jump]').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.tabJump)));
@@ -425,11 +433,10 @@
     bindEvents();
     $('#workDate').value = ymd();
     $('#demoBanner').hidden = !demo;
-    if (demo) $('#adminCode').value = '1234';
-    const stored = sessionStorage.getItem(STORAGE_KEY);
+    $('#adminCode').value = demo ? '1234' : '';
+    const stored = sessionStorage.getItem(STORAGE_KEY) || '';
     if (stored) {
-      state.adminCode = stored;
-      $('#adminCode').value = stored;
+      state.adminSession = stored;
       showLogin(false);
       await loadOverview();
     } else if (demo) {
