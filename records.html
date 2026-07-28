@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DPRO訪問介護 訪問記録検索・CSV出力・印刷">
+  <meta name="theme-color" content="#0b6b62">
+  <title>訪問記録検索・出力｜DPRO訪問介護</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="records.css">
+</head>
+<body class="records-body">
+  <header class="records-header no-print">
+    <div class="records-header-inner">
+      <div class="records-brand"><span class="brand-mark">DP</span><div><strong>訪問記録の検索・出力</strong><small>DPRO訪問介護ステーション</small></div></div>
+      <div class="records-header-actions">
+        <a class="button button-secondary" id="ownerBackLink" href="owner.html">管理画面へ戻る</a>
+        <button class="button button-secondary" id="logoutButton" type="button" hidden>ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="records-login-wrap no-print" id="loginPanel">
+    <section class="records-login-card">
+      <p class="eyebrow">RECORD ARCHIVE ACCESS</p>
+      <h1>訪問記録を検索・保存</h1>
+      <p>期間、利用者、担当者、状態から記録を探し、CSVまたは印刷で保存できます。</p>
+      <form id="loginForm" class="records-login-form">
+        <label for="adminCode">管理コード</label>
+        <div class="code-row">
+          <input id="adminCode" type="password" inputmode="numeric" maxlength="20" autocomplete="current-password" required>
+          <button class="button button-secondary" id="clearAdminCode" type="button">削除</button>
+        </div>
+        <button class="button button-primary" type="submit">記録管理を開く</button>
+      </form>
+    </section>
+  </main>
+
+  <main class="records-app" id="recordsApp" hidden>
+    <section class="records-hero no-print">
+      <div>
+        <p class="eyebrow">VISIT RECORD ARCHIVE</p>
+        <h1>訪問記録の検索・出力</h1>
+        <p>検索結果には管理者向け情報が含まれます。CSVや印刷物の保管場所に注意してください。</p>
+      </div>
+      <div class="records-version" id="versionLabel"></div>
+    </section>
+
+    <section class="demo-banner no-print" id="demoBanner" hidden><strong>デモ操作中</strong><span>架空の利用者・スタッフ情報を使用しています。</span></section>
+
+    <section class="filter-card no-print">
+      <form id="searchForm">
+        <div class="filter-grid">
+          <label>開始日<input id="dateFrom" name="date_from" type="date" required></label>
+          <label>終了日<input id="dateTo" name="date_to" type="date" required></label>
+          <label>利用者<select id="clientFilter" name="client_id"><option value="">すべて</option></select></label>
+          <label>担当スタッフ<select id="staffFilter" name="staff_id"><option value="">すべて</option></select></label>
+          <label>記録状態<select id="statusFilter" name="record_status"><option value="">すべて</option></select></label>
+          <label class="keyword-label">キーワード<input id="keywordFilter" name="q" maxlength="100" placeholder="氏名・利用者番号・実施内容・様子"></label>
+        </div>
+        <div class="filter-actions">
+          <button class="button button-primary" id="searchButton" type="submit">検索する</button>
+          <button class="button button-secondary" id="resetButton" type="button">条件を戻す</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="archive-notice no-print">
+      <div><strong>保存運用</strong><p>DPROは訪問記録を自動削除しません。保存期間は自治体・法人・契約の規程を確認し、月1回を目安にCSVを安全な保管先へ保存してください。</p></div>
+      <label class="internal-check"><input id="includeInternal" type="checkbox"> CSVに職員内部情報を含める</label>
+    </section>
+
+    <section class="result-toolbar no-print">
+      <div class="result-summary"><strong id="resultTotal">0件</strong><span id="resultRange">検索前</span></div>
+      <div class="result-actions">
+        <button class="button button-secondary" id="printListButton" type="button" disabled>一覧を印刷</button>
+        <button class="button button-primary" id="csvButton" type="button" disabled>CSVを保存</button>
+      </div>
+    </section>
+
+    <section class="records-list" id="recordsList"></section>
+
+    <nav class="pagination no-print" aria-label="検索結果ページ">
+      <button class="button button-secondary" id="prevPage" type="button" disabled>前の50件</button>
+      <span id="pageLabel">1ページ</span>
+      <button class="button button-secondary" id="nextPage" type="button" disabled>次の50件</button>
+    </nav>
+  </main>
+
+  <section class="print-header print-only" id="printHeader">
+    <h1>訪問記録一覧</h1>
+    <p id="printMeta"></p>
+  </section>
+
+  <section class="single-print print-only" id="singlePrintArea"></section>
+
+  <dialog id="recordDialog" class="record-dialog no-print">
+    <div class="dialog-panel">
+      <header><div><p class="eyebrow">RECORD DETAIL</p><h2 id="dialogTitle">訪問記録</h2><p id="dialogMeta"></p></div><button class="dialog-close" id="closeDialog" type="button">×</button></header>
+      <div id="dialogContent" class="dialog-content"></div>
+      <footer><button class="button button-secondary" id="printDetailButton" type="button">この記録を印刷</button><button class="button button-primary" id="closeDialogButton" type="button">閉じる</button></footer>
+    </div>
+  </dialog>
+
+  <div class="loading-overlay" id="loadingOverlay" hidden><div class="spinner"></div><span>読み込み中...</span></div>
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="config.js"></script>
+  <script src="records.js"></script>
+</body>
+</html>
