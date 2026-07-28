@@ -1,0 +1,235 @@
+name: STEP HOMECARE-15 Final Regression
+
+on:
+  push:
+    paths:
+      - ".github/workflows/step-homecare-15-final-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: homecare-15-final-regression
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply HOMECARE-15 frontend regression patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+
+          VERSION = 'HOMECARE-15-FINAL-REGRESSION-COMPLETE-20260728'
+
+          def replace_once(path_name, old, new):
+              path = Path(path_name)
+              if not path.exists():
+                  raise SystemExit(f'ERROR: required file not found: {path_name}')
+              text = path.read_text(encoding='utf-8')
+              if new in text:
+                  print(f'SKIP already updated: {path_name}')
+                  return
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'ERROR: expected exactly one anchor in {path_name}, found {count}: {old!r}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+              print(f'UPDATED: {path_name}')
+
+          replace_once(
+              'config.js',
+              '// STEP HOMECARE-14: 訪問記録検索・CSV出力・印刷・保存運用',
+              '// STEP HOMECARE-15: 全画面回帰・管理権限分離・CSV数式実行防止'
+          )
+          replace_once(
+              'config.js',
+              "APP_VERSION: 'HOMECARE-14-RECORD-SEARCH-EXPORT-COMPLETE-20260728'",
+              f"APP_VERSION: '{VERSION}'"
+          )
+
+          replace_once(
+              'owner.js',
+              'if (error.status===401) logout(false);',
+              'if ([401,403].includes(error.status)) logout(false);'
+          )
+          replace_once(
+              'owner-ipad.js',
+              'if (error.status === 401) logout(false);',
+              'if ([401, 403].includes(error.status)) logout(false);'
+          )
+          replace_once(
+              'records.js',
+              'if(e.status===401)logout(false);',
+              'if([401,403].includes(e.status))logout(false);'
+          )
+          replace_once(
+              'settings.js',
+              'if(e.status===401)logout(false);',
+              'if([401,403].includes(e.status))logout(false);'
+          )
+          replace_once(
+              'schedule.js',
+              'if (error.status === 401) {',
+              'if ([401, 403].includes(error.status)) {'
+          )
+          replace_once(
+              'schedule.js',
+              "if (error.status === 401 || /ログイン|管理/.test(error.message)) {",
+              "if ([401, 403].includes(error.status) || /ログイン|管理|権限/.test(error.message)) {"
+          )
+
+          replace_once(
+              'system-check.js',
+              "if(/^owner_/.test(key))return'オーナー管理';if(/^settings_/.test(key)||key==='system_check_ui')return'設定・営業前確認';return'その他'}",
+              "if(/^owner_/.test(key))return'オーナー管理';if(/^(record_|csv_)/.test(key))return'訪問記録・保存';if(/^settings_/.test(key)||key==='system_check_ui')return'設定・営業前確認';return'その他'}"
+          )
+          replace_once(
+              'system-check.js',
+              "if(!r.ok)throw new Error(d.error||`HTTP ${r.status}`);return d",
+              "if(!r.ok){const e=new Error(d.error||`HTTP ${r.status}`);e.status=r.status;throw e}return d"
+          )
+          replace_once(
+              'system-check.js',
+              "}catch(e){toast(e.message,true);$('#overallCard').className='overall-card bad';$('#overallText').textContent='通信失敗'}finally{loading(false)}}",
+              "}catch(e){if([401,403].includes(e.status)){state.adminSession='';sessionStorage.removeItem(STORAGE_KEY);$('#adminCode').value=demo?'1234':'';}toast(e.message,true);$('#overallCard').className='overall-card bad';$('#overallText').textContent='通信失敗'}finally{loading(false)}}"
+          )
+          PY
+
+      - name: Verify Worker version and public response
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --retry 3 --retry-delay 2 --fail --silent --show-error \
+            'https://dpro-homecare-family-line-api.dpromstk2000.workers.dev/')"
+          printf '%s' "$response" | grep -F 'HOMECARE-15-FINAL-REGRESSION-COMPLETE-20260728' >/dev/null
+          printf '%s' "$response" | grep -F '"ok":true' >/dev/null
+
+      - name: Run frontend regression checks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required=(
+            app.js config.js family.html index.html member.html
+            owner-ipad.css owner-ipad.html owner-ipad.js
+            owner.css owner.html owner.js
+            records.css records.html records.js
+            schedule.css schedule.html schedule.js
+            settings.css settings.html settings.js
+            staff.css staff.html staff.js
+            styles.css system-check.css system-check.html system-check.js
+          )
+          for file in "${required[@]}"; do
+            test -f "$file" || { echo "MISSING: $file"; exit 1; }
+          done
+
+          for file in ./*.js; do
+            node --check "$file"
+          done
+
+          python <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+
+          class Inspector(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids=[]
+                  self.form_depth=0
+                  self.form_nested=False
+                  self.refs=[]
+              def handle_starttag(self, tag, attrs):
+                  data=dict(attrs)
+                  if data.get('id'):
+                      self.ids.append(data['id'])
+                  if tag=='form':
+                      if self.form_depth:
+                          self.form_nested=True
+                      self.form_depth += 1
+                  if tag in {'script','link','img','a'}:
+                      key='src' if tag in {'script','img'} else 'href'
+                      value=data.get(key,'')
+                      if value and not value.startswith(('http://','https://','mailto:','tel:','#','javascript:')):
+                          self.refs.append(value.split('?',1)[0].split('#',1)[0])
+              def handle_endtag(self, tag):
+                  if tag=='form' and self.form_depth:
+                      self.form_depth -= 1
+
+          errors=[]
+          for path in sorted(Path('.').glob('*.html')):
+              parser=Inspector()
+              parser.feed(path.read_text(encoding='utf-8'))
+              duplicates=sorted({x for x in parser.ids if parser.ids.count(x)>1})
+              if duplicates:
+                  errors.append(f'{path}: duplicate ids {duplicates}')
+              if parser.form_nested:
+                  errors.append(f'{path}: nested form')
+              for ref in parser.refs:
+                  if ref and not Path(ref).exists():
+                      errors.append(f'{path}: missing local reference {ref}')
+
+          expected_version='HOMECARE-15-FINAL-REGRESSION-COMPLETE-20260728'
+          config=Path('config.js').read_text(encoding='utf-8')
+          if expected_version not in config:
+              errors.append('config.js: HOMECARE-15 version missing')
+
+          scope_files=['owner.js','owner-ipad.js','records.js','schedule.js','settings.js','system-check.js']
+          for name in scope_files:
+              text=Path(name).read_text(encoding='utf-8')
+              if '403' not in text:
+                  errors.append(f'{name}: 403 scope handling missing')
+
+          sys=Path('system-check.js').read_text(encoding='utf-8')
+          if sys.count(".html?demo=1") < 10:
+              errors.append('system-check.js: fewer than 10 public pages')
+          if '訪問記録・保存' not in sys:
+              errors.append('system-check.js: record group missing')
+
+          secret_patterns=[
+              r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
+              r'ghp_[A-Za-z0-9]{30,}',
+              r'sb_secret_[A-Za-z0-9_-]{20,}'
+          ]
+          for path in list(Path('.').glob('*.js'))+list(Path('.').glob('*.html')):
+              text=path.read_text(encoding='utf-8')
+              for pattern in secret_patterns:
+                  if re.search(pattern,text):
+                      errors.append(f'{path}: possible secret detected')
+
+          if errors:
+              raise SystemExit('\n'.join(errors))
+          print('HTML / references / version / scope handling: PASS')
+          PY
+
+          git diff --check
+
+      - name: Commit completed patch and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add config.js owner.js owner-ipad.js records.js schedule.js settings.js system-check.js
+          git rm --ignore-unmatch .github/workflows/step-homecare-15-final-regression.yml
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Complete STEP HOMECARE-15 final regression"
+          git push origin main
