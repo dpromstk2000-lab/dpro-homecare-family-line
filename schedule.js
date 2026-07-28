@@ -103,7 +103,7 @@
       return data;
     } catch (error) {
       if (error.name === 'AbortError') throw new Error('通信がタイムアウトしました。もう一度お試しください。');
-      if (error.status === 401) {
+      if ([401, 403].includes(error.status)) {
         state.adminSession = '';
         sessionStorage.removeItem(STORAGE_KEY);
       }
@@ -287,7 +287,7 @@
       $('#adminGate').hidden = true;
     } catch (error) {
       showToast(error.message, true);
-      if (error.status === 401 || /ログイン|管理/.test(error.message)) {
+      if ([401, 403].includes(error.status) || /ログイン|管理|権限/.test(error.message)) {
         state.adminSession = '';
         sessionStorage.removeItem(STORAGE_KEY);
         $('#workspace').hidden = true;

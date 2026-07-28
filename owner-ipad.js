@@ -109,7 +109,7 @@
       return data;
     } catch (error) {
       if (error.name === 'AbortError') throw new Error('通信がタイムアウトしました。もう一度お試しください。');
-      if (error.status === 401) logout(false);
+      if ([401, 403].includes(error.status)) logout(false);
       throw error;
     } finally {
       clearTimeout(timer);

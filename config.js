@@ -1,8 +1,8 @@
 // DPRO 訪問介護・家族連絡 LINE
-// STEP HOMECARE-14: 訪問記録検索・CSV出力・印刷・保存運用
+// STEP HOMECARE-15: 全画面回帰・管理権限分離・CSV数式実行防止
 window.DPRO_HOMECARE_CONFIG = Object.freeze({
   APP_NAME: 'DPRO 訪問介護・家族連絡 LINE',
-  APP_VERSION: 'HOMECARE-14-RECORD-SEARCH-EXPORT-COMPLETE-20260728',
+  APP_VERSION: 'HOMECARE-15-FINAL-REGRESSION-COMPLETE-20260728',
   API_BASE: 'https://dpro-homecare-family-line-api.dpromstk2000.workers.dev',
   OFFICE_CODE: 'dpro_homecare_demo',
   LIFF_ID: '',
