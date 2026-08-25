@@ -138,7 +138,9 @@
   .staff-login { grid-template-columns: 1fr; gap: 18px; padding: 20px; }
   .staff-welcome { align-items: flex-start; padding: 18px; }
   .staff-summary { grid-template-columns: repeat(2, 1fr); }
-  .date-control { grid-template-columns: 44px 1fr 44px; }
+  .date-control { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+  .date-control label, .date-control input { min-width: 0; }
+  /* HOMECARE-R6-MOBILE320 */
   .date-control #todayButton { grid-column: 1 / -1; }
   .visit-list-section { padding: 14px; }
   .visit-dialog { width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
