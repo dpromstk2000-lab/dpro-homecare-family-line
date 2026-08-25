@@ -1,0 +1,140 @@
+name: DPRO HOMECARE R6 Mobile 320 Closeout
+
+on:
+  push:
+    paths:
+      - '.github/workflows/homecare-r6-mobile320-closeout-20260825.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout HOMECARE
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply minimal 320px grid fix
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('staff.css')
+          s=p.read_text(encoding='utf-8')
+          old='  .date-control { grid-template-columns: 44px 1fr 44px; }'
+          new='  .date-control { grid-template-columns: 44px minmax(0, 1fr) 44px; }\n  .date-control label, .date-control input { min-width: 0; }'
+          if 'HOMECARE-R6-MOBILE320' not in s:
+              if old not in s:
+                  raise SystemExit('Expected mobile date-control rule not found')
+              s=s.replace(old, new+'\n  /* HOMECARE-R6-MOBILE320 */', 1)
+              p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git diff --quiet -- staff.css; then
+            git add staff.css
+            git commit -m 'HOMECARE fix 320px date control overflow'
+            git push origin HEAD:main
+          fi
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Wait for GitHub Pages CSS deployment
+        shell: bash
+        run: |
+          python - <<'PY'
+          import time, urllib.request
+          url='https://dpromstk2000-lab.github.io/dpro-homecare-family-line/staff.css'
+          for i in range(24):
+              try:
+                  req=urllib.request.Request(url+'?r6='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=15) as r:
+                      text=r.read().decode('utf-8','replace')
+                      if 'HOMECARE-R6-MOBILE320' in text:
+                          print('Pages deployment observed')
+                          raise SystemExit(0)
+              except SystemExit:
+                  raise
+              except Exception as e:
+                  print('wait',i,e)
+              time.sleep(10)
+          raise SystemExit('Timed out waiting for HOMECARE R6 CSS on GitHub Pages')
+          PY
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Chromium
+        run: |
+          mkdir -p /tmp/homecare-r6/evidence
+          cd /tmp/homecare-r6
+          npm init -y
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Fresh Chromium and public URL checks
+        shell: bash
+        run: |
+          cd /tmp/homecare-r6
+          cat > qa.cjs <<'NODE'
+          const fs=require('fs');
+          const {chromium}=require('playwright');
+          const targets=[
+            {item:'READY-018',url:'https://dpromstk2000-lab.github.io/dpro-homecare-family-line/owner.html?demo=1',width:1440,height:1000},
+            {item:'READY-019',url:'https://dpromstk2000-lab.github.io/dpro-homecare-family-line/family.html?demo=1',width:390,height:844},
+            {item:'READY-020',url:'https://dpromstk2000-lab.github.io/dpro-homecare-family-line/staff.html?demo=1',width:320,height:720},
+            {item:'READY-021',url:'https://dpromstk2000-lab.github.io/dpro-homecare-family-line/owner-ipad.html?demo=1',width:1024,height:768},
+          ];
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const results=[];
+            for(const t of targets){
+              const ctx=await browser.newContext({viewport:{width:t.width,height:t.height}});
+              const page=await ctx.newPage();
+              const pageerrors=[],consoleErrors=[],failedRequests=[];
+              page.on('pageerror',e=>pageerrors.push(String(e)));
+              page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text())});
+              page.on('requestfailed',r=>failedRequests.push({url:r.url(),error:r.failure()?.errorText||''}));
+              let status=null,navError=null;
+              try{const r=await page.goto(t.url+'&r6='+Date.now(),{waitUntil:'domcontentloaded',timeout:45000});status=r?.status()??null;await page.waitForTimeout(1800)}catch(e){navError=String(e)}
+              let metrics=null,blockingText=[],overflowEls=[];
+              if(!navError){
+                metrics=await page.evaluate(()=>({innerWidth,innerHeight,documentScrollWidth:document.documentElement.scrollWidth,bodyScrollWidth:document.body?.scrollWidth||0,text:(document.body?.innerText||'').slice(0,200000)}));
+                blockingText=['Internal Server Error','Failed to fetch','サーバーエラー','システムエラー','技術的なエラー'].filter(s=>metrics.text.includes(s));
+                overflowEls=await page.evaluate(()=>[...document.querySelectorAll('*')].map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,id:el.id||'',cls:String(el.className||''),left:r.left,right:r.right,width:r.width}}).filter(x=>x.left<-.5||x.right>innerWidth+.5).slice(0,30));
+                await page.screenshot({path:`evidence/${t.item}_${t.width}x${t.height}.png`,fullPage:true});
+              }
+              const overflow=metrics?Math.max(metrics.documentScrollWidth,metrics.bodyScrollWidth)>metrics.innerWidth:true;
+              const pass=!navError&&status===200&&!overflow&&pageerrors.length===0&&consoleErrors.length===0&&failedRequests.length===0&&blockingText.length===0;
+              results.push({item_code:t.item,url:t.url,viewport:{width:t.width,height:t.height},http_status:status,nav_error:navError,metrics:metrics&&{innerWidth:metrics.innerWidth,innerHeight:metrics.innerHeight,documentScrollWidth:metrics.documentScrollWidth,bodyScrollWidth:metrics.bodyScrollWidth},horizontal_overflow:overflow,overflow_elements:overflowEls,pageerrors,console_errors:consoleErrors,failed_requests:failedRequests,blocking_technical_text:blockingText,pass});
+              await ctx.close();
+            }
+            const product='https://dpromstk2000-lab.github.io/dpro-line-systems-site/systems/homecare.html';
+            const demo='https://dpromstk2000-lab.github.io/dpro-homecare-family-line/demo-guide.html';
+            const pr=await fetch(product+'?r6='+Date.now(),{headers:{'cache-control':'no-cache'}});const pt=await pr.text();
+            const dr=await fetch(demo+'?r6='+Date.now(),{headers:{'cache-control':'no-cache'}});
+            const publicResult={product_http:pr.status,explicit:pt.includes('dpro-homecare-family-line/demo-guide.html'),root_only:pt.includes('dpro-homecare-family-line/"'),demo_http:dr.status,pass:pr.status===200&&pt.includes('dpro-homecare-family-line/demo-guide.html')&&!pt.includes('dpro-homecare-family-line/"')&&dr.status===200};
+            await browser.close();
+            const report={generated_at:new Date().toISOString(),source_sha:process.env.SOURCE_SHA||null,results,public_url:publicResult,all_browser_pass:results.every(r=>r.pass),all_pass:results.every(r=>r.pass)&&publicResult.pass};
+            fs.writeFileSync('evidence/R6_QA_REPORT.json',JSON.stringify(report,null,2));
+            fs.writeFileSync('evidence/R6_QA_SUMMARY.txt',results.map(r=>`${r.item_code} ${r.pass?'PASS':'FAIL'} HTTP=${r.http_status} overflow=${r.horizontal_overflow}`).join('\n')+`\nREADY-033 ${publicResult.pass?'PASS':'FAIL'} product_http=${publicResult.product_http} explicit=${publicResult.explicit} root_only=${publicResult.root_only} demo_http=${publicResult.demo_http}\n`);
+            console.log(JSON.stringify(report,null,2));
+            if(!report.all_pass)process.exit(1);
+          })().catch(e=>{console.error(e);process.exit(2)});
+          NODE
+          node qa.cjs
+
+      - name: Upload R6 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homecare-r6-mobile320-closeout-20260825
+          path: /tmp/homecare-r6/evidence/
+          if-no-files-found: error
+          retention-days: 30
