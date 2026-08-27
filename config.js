@@ -11,3 +11,29 @@ window.DPRO_HOMECARE_CONFIG = Object.freeze({
   STAFF_SESSION_STORAGE_KEY: 'dpro_homecare_staff_session',
   ADMIN_SESSION_STORAGE_KEY: 'dpro_homecare_admin_session'
 });
+
+/* DPRO TUTORIAL R3-R4 loader.
+   Demo/tutorial UI only. It does not call business mutation APIs. */
+(() => {
+  'use strict';
+  const query = new URLSearchParams(location.search);
+  const shouldLoad = query.get('demo') === '1'
+    || query.get('tutorial') === 'first10';
+  if (!shouldLoad) return;
+
+  if (!document.querySelector('link[data-dpro-tutorial-style]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'tutorial.css';
+    link.dataset.dproTutorialStyle = '1';
+    document.head.appendChild(link);
+  }
+
+  if (!document.querySelector('script[data-dpro-tutorial-script]')) {
+    const script = document.createElement('script');
+    script.src = 'tutorial.js';
+    script.defer = true;
+    script.dataset.dproTutorialScript = '1';
+    document.head.appendChild(script);
+  }
+})();
