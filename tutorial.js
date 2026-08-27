@@ -287,7 +287,7 @@
       const next = card.querySelector('[data-tutorial-next]');
       if (status) {
         status.className = 'dpro-tutorial-status ready';
-        status.textContent = skipped ? 'First10を終了しました。右下のFirst10ボタンから、いつでも最初から確認できます。' : 'First10 完了です。右下のFirst10ボタンから、いつでもReplayできます。';
+        status.textContent = skipped ? 'First10を終了しました。右下の「操作ガイド」から、いつでも最初から確認できます。' : 'First10 完了です。右下の「操作ガイド」から、いつでもReplayできます。';
       }
       if (next) {
         next.disabled = false;
@@ -621,19 +621,15 @@
       return;
     }
     button.hidden = false;
-    if (state.status === 'closed') {
-      button.textContent = 'First10を再開';
-      button.setAttribute('aria-label', '中断したFirst10を続きから再開');
-      button.onclick = resume;
-    } else if (state.status === 'completed') {
-      button.textContent = 'First10をReplay';
-      button.setAttribute('aria-label', 'First10を最初からもう一度確認');
-      button.onclick = replay;
-    } else {
-      button.textContent = 'First10を開始';
-      button.setAttribute('aria-label', 'HOMECARE First10を開始');
-      button.onclick = start;
-    }
+    button.textContent = '操作ガイド';
+    const done = new Set([...(state.completed || []), ...(state.skipped || [])]).size;
+    const stateHint = state.status === 'closed'
+      ? `・First10 ${done}/${TOTAL_STEPS} 中断中`
+      : state.status === 'completed'
+        ? '・First10 完了'
+        : '';
+    button.setAttribute('aria-label', `HOMECARE 操作ガイドを開く${stateHint}`);
+    button.onclick = () => { location.href = 'guide-center.html'; };
   }
 
   function injectGuideLauncher() {

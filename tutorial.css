@@ -205,3 +205,198 @@
 @media (prefers-reduced-motion: reduce) {
   #dproTutorialHighlight { transition: none; }
 }
+
+
+/* DPRO TUTORIAL HOMECARE / R4 GUIDE CENTER */
+.dpro-guide-page {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f3f8f6;
+  color: var(--dpro-tutorial-ink);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+  font-size: 17px;
+  line-height: 1.7;
+  -webkit-text-size-adjust: 100%;
+}
+.dpro-guide-page * { box-sizing: border-box; }
+.dpro-guide-page a { color: var(--dpro-tutorial-accent-dark); }
+.dpro-guide-page a:focus-visible,
+.dpro-guide-page button:focus-visible {
+  outline: 3px solid rgba(49, 95, 120, .42);
+  outline-offset: 3px;
+}
+.dpro-guide-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 64px;
+}
+.dpro-guide-hero {
+  padding: clamp(24px, 5vw, 44px);
+  border-radius: 26px;
+  background: linear-gradient(135deg, #064c46, #0b6b62 66%, #4ca397);
+  color: #fff;
+  box-shadow: 0 20px 54px rgba(17, 52, 47, .20);
+}
+.dpro-guide-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  opacity: .86;
+}
+.dpro-guide-hero h1 {
+  margin: 8px 0 0;
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.25;
+}
+.dpro-guide-hero > p:not(.dpro-guide-kicker) {
+  max-width: 780px;
+  margin: 14px 0 0;
+  color: rgba(255,255,255,.94);
+}
+.dpro-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.dpro-guide-button {
+  min-height: 50px;
+  border: 1px solid #fff;
+  border-radius: 13px;
+  padding: 10px 18px;
+  background: #fff;
+  color: #064c46;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+.dpro-guide-button.secondary {
+  background: rgba(255,255,255,.10);
+  color: #fff;
+  border-color: rgba(255,255,255,.45);
+}
+.dpro-guide-button:disabled { opacity: .5; cursor: not-allowed; }
+.dpro-guide-progress {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.dpro-guide-note {
+  margin-top: 16px;
+  padding: 15px 17px;
+  border: 1px solid #e9c87e;
+  border-radius: 15px;
+  background: #fff7e8;
+  color: #714b00;
+}
+.dpro-guide-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 18px 0 0;
+  padding: 10px 0;
+  background: rgba(243,248,246,.94);
+  backdrop-filter: blur(10px);
+  scrollbar-width: thin;
+}
+.dpro-guide-nav a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 8px 13px;
+  border: 1px solid var(--dpro-tutorial-line);
+  border-radius: 999px;
+  background: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+}
+.dpro-guide-section {
+  scroll-margin-top: 72px;
+  margin-top: 30px;
+}
+.dpro-guide-section > h2 {
+  margin: 0 0 13px;
+  font-size: clamp(23px, 3vw, 31px);
+  line-height: 1.35;
+}
+.dpro-guide-section > p {
+  max-width: 820px;
+  margin: -5px 0 14px;
+  color: var(--dpro-tutorial-muted);
+}
+.dpro-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 14px;
+}
+.dpro-guide-card {
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid var(--dpro-tutorial-line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(17, 52, 47, .07);
+}
+.dpro-guide-card h3 { margin: 0; font-size: 20px; line-height: 1.4; }
+.dpro-guide-card p { margin: 8px 0 0; color: var(--dpro-tutorial-muted); }
+.dpro-guide-card ul { margin: 12px 0 0; padding-left: 1.3em; }
+.dpro-guide-card li + li { margin-top: 6px; }
+.dpro-guide-card a { overflow-wrap: anywhere; font-weight: 800; }
+.dpro-guide-card .dpro-guide-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 13px;
+}
+.dpro-guide-card .dpro-guide-link-row a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 11px;
+  background: var(--dpro-tutorial-soft);
+  text-decoration: none;
+}
+.dpro-guide-warning {
+  border-color: #e8c270;
+  background: #fffaf0;
+}
+.dpro-guide-danger {
+  border-color: #efb0aa;
+  background: #fff3f1;
+}
+.dpro-guide-topic-id {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--dpro-tutorial-accent-dark);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.dpro-guide-footer {
+  margin-top: 36px;
+  padding: 22px 0;
+  border-top: 1px solid var(--dpro-tutorial-line);
+  color: var(--dpro-tutorial-muted);
+  text-align: center;
+  font-size: 13px;
+}
+@media (max-width: 760px) {
+  .dpro-guide-shell { width: min(100% - 22px, 1120px); padding-top: 12px; }
+  .dpro-guide-grid { grid-template-columns: 1fr; }
+  .dpro-guide-hero { border-radius: 20px; padding: 24px 20px; }
+}
+@media (max-width: 420px) {
+  .dpro-guide-page { font-size: 16px; }
+  .dpro-guide-shell { width: calc(100% - 16px); }
+  .dpro-guide-actions { display: grid; grid-template-columns: 1fr; }
+  .dpro-guide-button { width: 100%; }
+  .dpro-guide-card { padding: 16px; }
+}
