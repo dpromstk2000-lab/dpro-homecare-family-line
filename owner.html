@@ -8,6 +8,7 @@
   <title>オーナー管理｜DPRO訪問介護</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="owner.css">
+<style id="dpro-chat-b-guide-style">.dpro-chat-b-guide-link{position:fixed;right:12px;bottom:12px;z-index:9999;display:inline-flex;align-items:center;min-height:42px;padding:8px 13px;border:1px solid #cbdad6;border-radius:999px;background:#fff;color:#0b5c54;text-decoration:none;font-weight:850;box-shadow:0 8px 24px rgba(0,0,0,.12)}@media(max-width:700px){.dpro-chat-b-guide-link{bottom:72px}}</style>
 </head>
 <body class="owner-body">
   <header class="owner-header">
@@ -33,7 +34,7 @@
         </div>
         <button class="button button-primary" type="submit">管理画面を開く</button>
       </form>
-      <p class="owner-help">本番環境では管理コードだけに依存せず、事業所の認証方式へ切り替えます。</p>
+      <p class="owner-help">管理コードは事業所ごとに安全に管理してください。</p>
     </section>
   </main>
 
@@ -57,7 +58,7 @@
         <a href="staff.html?demo=1">スタッフ画面</a>
         <a href="family.html?demo=1">家族画面</a>
         <a href="settings.html?demo=1">事業所設定・LINE連携</a>
-        <a href="system-check.html?demo=1" id="systemCheckLink">system-check</a>
+        <a href="system-check.html?demo=1" id="systemCheckLink">営業前チェック</a>
       </div>
     </aside>
 
@@ -106,5 +107,6 @@
 
   <script src="config.js"></script>
   <script src="owner.js"></script>
+<a class="dpro-chat-b-guide-link" data-dpro-chat-b-guide href="guide-center.html" target="_blank" rel="noopener">操作ガイド</a>
 </body>
 </html>
